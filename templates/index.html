@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Accueil{% endblock %}
+{% block header %}Créer votre Portfolio{% endblock %}
+
+{% block content %}
+<p>Remplissez le formulaire ci-dessous pour générer votre portfolio en ligne.</p>
+
+<form action="/" method="post">
+    <label for="username">Nom d'utilisateur</label>
+    <input id="username" type="text" name="username" required />
+
+    <label for="email">Email</label>
+    <input id="email" type="email" name="email" required />
+
+    <label for="name">Nom</label>
+    <input id="name" type="text" name="name" required />
+
+    <label for="firstname">Prénom</label>
+    <input id="firstname" type="text" name="firstname" required />
+
+    <label for="phone">Téléphone</label>
+    <input id="phone" type="text" name="phone" required />
+
+    <label for="github">GitHub (optionnel)</label>
+    <input id="github" type="text" name="github" placeholder="https://github.com/..." />
+
+    <label for="bio">Bio / Description</label>
+    <textarea id="bio" name="bio" rows="4" placeholder="Parlez de vous..."></textarea>
+
+    <button type="submit">Générer mon portfolio</button>
+</form>
+{% endblock %}

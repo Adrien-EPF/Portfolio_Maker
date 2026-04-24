@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Portfolio de {{ user.firstname }}{% endblock %}
+{% block header %}Portfolio de {{ user.firstname }} {{ user.name }}{% endblock %}
+
+{% block content %}
+<section>
+    <h2>Informations personnelles</h2>
+    <table>
+        <tr>
+            <th>Nom d'utilisateur</th>
+            <td>{{ user.username }}</td>
+        </tr>
+        <tr>
+            <th>Nom</th>
+            <td>{{ user.name }}</td>
+        </tr>
+        <tr>
+            <th>Prénom</th>
+            <td>{{ user.firstname }}</td>
+        </tr>
+        <tr>
+            <th>Email</th>
+            <td>{{ user.email }}</td>
+        </tr>
+        <tr>
+            <th>Téléphone</th>
+            <td>{{ user.phone }}</td>
+        </tr>
+        {% if user.github %}
+        <tr>
+            <th>GitHub</th>
+            <td><a href="{{ user.github }}" target="_blank">{{ user.github }}</a></td>
+        </tr>
+        {% endif %}
+    </table>
+</section>
+
+{% if user.bio %}
+<section>
+    <h2>À propos</h2>
+    <p>{{ user.bio }}</p>
+</section>
+{% endif %}
+
+<section>
+    <h2>Partager ce portfolio</h2>
+    <p>Lien direct : <code>/portfolio/{{ user.id }}</code></p>
+</section>
+{% endblock %}
