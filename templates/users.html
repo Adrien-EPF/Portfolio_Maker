@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Tous les portfolios{% endblock %}
+{% block header %}Tous les portfolios{% endblock %}
+
+{% block content %}
+{% if users %}
+<table>
+    <thead>
+        <tr>
+            <th>Prénom</th>
+            <th>Nom</th>
+            <th>Nom d'utilisateur</th>
+            <th>Email</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for user in users %}
+        <tr>
+            <td>{{ user.firstname }}</td>
+            <td>{{ user.name }}</td>
+            <td>{{ user.username }}</td>
+            <td>{{ user.email }}</td>
+            <td>
+                <a href="/portfolio/{{ user.id }}">Voir</a>
+                &nbsp;|&nbsp;
+                <form action="/users/{{ user.id }}/delete" method="post" style="display:inline"
+                    onsubmit="return confirm('Supprimer le portfolio de {{ user.firstname }} ?')">
+                    <button type="submit">Supprimer</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>Aucun portfolio créé pour l'instant. <a href="/">Créer le premier !</a></p>
+{% endif %}
+{% endblock %}
