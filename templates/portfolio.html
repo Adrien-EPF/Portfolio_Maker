@@ -43,6 +43,106 @@
 {% endif %}
 
 <section>
+    <h2>Compétences</h2>
+    {% if skills %}
+    <table>
+        <tr>
+            <th>Compétence</th>
+            <th>Niveau</th>
+            <th>Action</th>
+        </tr>
+        {% for skill in skills %}
+        <tr>
+            <td>{{ skill.name }}</td>
+            <td>{{ skill.level or "—" }}</td>
+            <td>
+                <form action="/portfolio/{{ user.id }}/skills/{{ skill.id }}/delete" method="post">
+                    <button type="submit">Supprimer</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <p>Aucune compétence ajoutée.</p>
+    {% endif %}
+
+    <h3>Ajouter une compétence</h3>
+    <form action="/portfolio/{{ user.id }}/skills/add" method="post">
+        <label>Compétence : <input type="text" name="name" required></label>
+        <label>Niveau :
+            <select name="level">
+                <option value="">—</option>
+                <option value="Débutant">Débutant</option>
+                <option value="Intermédiaire">Intermédiaire</option>
+                <option value="Expert">Expert</option>
+            </select>
+        </label>
+        <button type="submit">Ajouter</button>
+    </form>
+</section>
+
+<section>
+    <h2>Expériences</h2>
+    {% if experiences %}
+    {% for exp in experiences %}
+    <div>
+        <h3>{{ exp.title }} — {{ exp.company }}</h3>
+        <p><em>{{ exp.start_date }} → {{ exp.end_date or "Présent" }}</em></p>
+        {% if exp.description %}
+        <p>{{ exp.description }}</p>
+        {% endif %}
+        <form action="/portfolio/{{ user.id }}/experiences/{{ exp.id }}/delete" method="post">
+            <button type="submit">Supprimer</button>
+        </form>
+    </div>
+    {% endfor %}
+    {% else %}
+    <p>Aucune expérience ajoutée.</p>
+    {% endif %}
+
+    <h3>Ajouter une expérience</h3>
+    <form action="/portfolio/{{ user.id }}/experiences/add" method="post">
+        <label>Intitulé de la mission : <input type="text" name="title" required></label>
+        <label>Entreprise / Etablissement : <input type="text" name="company" required></label>
+        <label>Date de début : <input type="text" name="start_date" required></label>
+        <label>Date de fin : <input type="text" name="end_date" placeholder="Laisser vide si poste actuel"></label>
+        <label>Description : <textarea name="description" rows="3"></textarea></label>
+        <button type="submit">Ajouter</button>
+    </form>
+</section>
+
+<section>
+    <h2>Formation</h2>
+    {% if educations %}
+    {% for edu in educations %}
+    <div>
+        <h3>{{ edu.degree }} — {{ edu.school }}</h3>
+        <p><em>{{ edu.start_date }} → {{ edu.end_date or "En cours" }}</em></p>
+        {% if edu.description %}
+        <p>{{ edu.description }}</p>
+        {% endif %}
+        <form action="/portfolio/{{ user.id }}/educations/{{ edu.id }}/delete" method="post">
+            <button type="submit">Supprimer</button>
+        </form>
+    </div>
+    {% endfor %}
+    {% else %}
+    <p>Aucune formation ajoutée.</p>
+    {% endif %}
+
+    <h3>Ajouter une formation</h3>
+    <form action="/portfolio/{{ user.id }}/educations/add" method="post">
+        <label>Diplôme : <input type="text" name="degree" required></label>
+        <label>Établissement : <input type="text" name="school" required></label>
+        <label>Date de début : <input type="text" name="start_date" required></label>
+        <label>Date de fin : <input type="text" name="end_date" placeholder="Laisser vide si en cours"></label>
+        <label>Description : <textarea name="description" rows="3"></textarea></label>
+        <button type="submit">Ajouter</button>
+    </form>
+</section>
+
+<section>
     <h2>Partager ce portfolio</h2>
     <p>Lien direct : <code>/portfolio/{{ user.id }}</code></p>
 </section>
