@@ -1,4 +1,3 @@
-
 from typing import Annotated
 from fastapi import FastAPI, Request, Form, HTTPException
 from fastapi.responses import RedirectResponse
@@ -25,26 +24,26 @@ class Skill(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="user.id")
     name: str
-    level: str | None = None  # ex: "Débutant", "Intermédiaire", "Expert"
+    level: str | None = None
  
  
 class Education(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="user.id")
-    degree: str        # Intitulé du diplôme
-    school: str        # Établissement
-    start_date: str    # ex: "Sep 2020"
-    end_date: str | None = None   # None = en cours
+    degree: str
+    school: str
+    start_date: str
+    end_date: str | None = None
     description: str | None = None
  
  
 class Experience(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="user.id")
-    title: str          # Intitulé du poste
-    company: str        # Entreprise
-    start_date: str     # ex: "Jan 2022"
-    end_date: str | None = None   # None = poste actuel
+    title: str
+    company: str
+    start_date: str
+    end_date: str | None = None
     description: str | None = None
  
  
@@ -61,7 +60,7 @@ def on_startup():
     create_db_and_tables()
  
  
-# ── Accueil / Création utilisateur ─────────────────────────────────────────
+# Accueil / Création utilisateur
  
 @app.get("/")
 def show_home(request: Request):
@@ -90,7 +89,7 @@ def create_user(
         return RedirectResponse(f"/portfolio/{user.id}", status_code=303)
  
  
-# ── Portfolio ───────────────────────────────────────────────────────────────
+# Portfolio
  
 @app.get("/portfolio/{user_id}")
 def show_portfolio(request: Request, user_id: int):
@@ -111,7 +110,7 @@ def show_portfolio(request: Request, user_id: int):
         )
  
  
-# ── Skills ──────────────────────────────────────────────────────────────────
+# Skills
  
 @app.post("/portfolio/{user_id}/skills/add")
 def add_skill(
@@ -137,7 +136,7 @@ def delete_skill(user_id: int, skill_id: int):
     return RedirectResponse(f"/portfolio/{user_id}", status_code=303)
  
  
-# ── Expériences ─────────────────────────────────────────────────────────────
+# Expériences
  
 @app.post("/portfolio/{user_id}/experiences/add")
 def add_experience(
@@ -171,7 +170,7 @@ def delete_experience(user_id: int, exp_id: int):
     return RedirectResponse(f"/portfolio/{user_id}", status_code=303)
  
  
-# ── Formations ──────────────────────────────────────────────────────────────
+# Formations
  
 @app.post("/portfolio/{user_id}/educations/add")
 def add_education(
@@ -205,7 +204,7 @@ def delete_education(user_id: int, edu_id: int):
     return RedirectResponse(f"/portfolio/{user_id}", status_code=303)
  
  
-# ── Liste utilisateurs ──────────────────────────────────────────────────────
+# Liste utilisateurs
  
 @app.get("/users")
 def list_users(request: Request):
@@ -222,7 +221,7 @@ def delete_user(user_id: int):
         user = session.get(User, user_id)
         if not user:
             raise HTTPException(status_code=404, detail="Utilisateur introuvable")
-        # Supprimer les skills et expériences liés
+        
         for skill in session.exec(select(Skill).where(Skill.user_id == user_id)).all():
             session.delete(skill)
         for exp in session.exec(select(Experience).where(Experience.user_id == user_id)).all():
