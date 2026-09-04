@@ -3,30 +3,55 @@
 {% block header %}Créer votre Portfolio{% endblock %}
 
 {% block content %}
-<p>Remplissez le formulaire ci-dessous pour générer votre portfolio en ligne.</p>
+<div class="card">
+    <p>Remplissez le formulaire ci-dessous pour générer votre portfolio en ligne.</p>
 
-<form action="/" method="post">
-    <label for="username">Nom d'utilisateur</label>
-    <input id="username" type="text" name="username" required />
+    <form action="/" method="post">
+        <fieldset>
+            <legend>Identité</legend>
+            <div class="field">
+                <label for="username">Nom d'utilisateur <span class="required">*</span></label>
+                <input id="username" type="text" name="username" required />
+            </div>
+            <div class="inline-fields">
+                <div class="field">
+                    <label for="firstname">Prénom <span class="required">*</span></label>
+                    <input id="firstname" type="text" name="firstname" required />
+                </div>
+                <div class="field">
+                    <label for="name">Nom <span class="required">*</span></label>
+                    <input id="name" type="text" name="name" required />
+                </div>
+            </div>
+        </fieldset>
 
-    <label for="email">Email</label>
-    <input id="email" type="email" name="email" required />
+        <fieldset>
+            <legend>Contact</legend>
+            <div class="inline-fields">
+                <div class="field">
+                    <label for="email">Email <span class="required">*</span></label>
+                    <input id="email" type="email" name="email" required />
+                </div>
+                <div class="field">
+                    <label for="phone">Téléphone <span class="required">*</span></label>
+                    <input id="phone" type="tel" name="phone" required />
+                </div>
+            </div>
+        </fieldset>
 
-    <label for="name">Nom</label>
-    <input id="name" type="text" name="name" required />
+        <fieldset>
+            <legend>En savoir plus (optionnel)</legend>
+            <div class="field">
+                <label for="github">GitHub</label>
+                <input id="github" type="text" name="github" placeholder="https://github.com/..." />
+            </div>
+            <div class="field">
+                <label for="bio">Bio / Description</label>
+                <textarea id="bio" name="bio" rows="4" placeholder="Parlez de vous..."></textarea>
+            </div>
+        </fieldset>
 
-    <label for="firstname">Prénom</label>
-    <input id="firstname" type="text" name="firstname" required />
-
-    <label for="phone">Téléphone</label>
-    <input id="phone" type="text" name="phone" required />
-
-    <label for="github">GitHub (optionnel)</label>
-    <input id="github" type="text" name="github" placeholder="https://github.com/..." />
-
-    <label for="bio">Bio / Description</label>
-    <textarea id="bio" name="bio" rows="4" placeholder="Parlez de vous..."></textarea>
-
-    <button type="submit">Générer mon portfolio</button>
-</form>
+        <button type="submit" class="btn btn-primary btn-block">Générer mon portfolio</button>
+    </form>
+</div>
 {% endblock %}

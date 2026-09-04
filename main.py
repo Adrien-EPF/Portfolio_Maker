@@ -1,6 +1,7 @@
 from typing import Annotated
 from fastapi import FastAPI, Request, Form, HTTPException
 from fastapi.responses import RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlmodel import Field, Session, SQLModel, create_engine, select
  
@@ -52,6 +53,7 @@ def create_db_and_tables():
  
  
 app = FastAPI()
+app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
  
  

@@ -4,21 +4,26 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{% block title %}{% endblock %} - Portfolio Maker</title>
-    <link rel="stylesheet" href="https://cdn.simplecss.org/simple.min.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/static/style.css" />
 </head>
 
 <body>
-    <header>
-        <h1>{% block header %}{% endblock %}</h1>
-        <nav>
-            <a href="/">Créer un portfolio</a>
-            <a href="/users">Voir tous les portfolios</a>
-        </nav>
+    <header class="site-header">
+        <div class="container">
+            <h1>{% block header %}{% endblock %}</h1>
+            <nav>
+                <a href="/">Créer un portfolio</a>
+                <a href="/users">Voir tous les portfolios</a>
+            </nav>
+        </div>
     </header>
-    <main>
+    <main class="container">
         {% block content %}{% endblock %}
     </main>
-    <footer>
+    <footer class="site-footer">
         <p>Portfolio Maker — Projet FastAPI</p>
     </footer>
 </body>

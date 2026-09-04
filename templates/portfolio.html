@@ -3,147 +3,177 @@
 {% block header %}Portfolio de {{ user.firstname }} {{ user.name }}{% endblock %}
 
 {% block content %}
-<section>
-    <h2>Informations personnelles</h2>
-    <table>
-        <tr>
-            <th>Nom d'utilisateur</th>
-            <td>{{ user.username }}</td>
-        </tr>
-        <tr>
-            <th>Nom</th>
-            <td>{{ user.name }}</td>
-        </tr>
-        <tr>
-            <th>Prénom</th>
-            <td>{{ user.firstname }}</td>
-        </tr>
-        <tr>
-            <th>Email</th>
-            <td>{{ user.email }}</td>
-        </tr>
-        <tr>
-            <th>Téléphone</th>
-            <td>{{ user.phone }}</td>
-        </tr>
-        {% if user.github %}
-        <tr>
-            <th>GitHub</th>
-            <td><a href="{{ user.github }}" target="_blank">{{ user.github }}</a></td>
-        </tr>
+{% set level_class = {"Débutant": "badge-beginner", "Intermédiaire": "badge-intermediate", "Expert": "badge-expert"} %}
+
+<div class="card profile-hero">
+    <div class="profile-avatar">{{ user.firstname[:1] | upper }}{{ user.name[:1] | upper }}</div>
+    <div class="profile-info">
+        <h2>{{ user.firstname }} {{ user.name }}</h2>
+        <div class="profile-meta">
+            <span>@{{ user.username }}</span>
+            <a href="mailto:{{ user.email }}">{{ user.email }}</a>
+            <span>{{ user.phone }}</span>
+            {% if user.github %}
+            <a href="{{ user.github }}" target="_blank" rel="noopener">GitHub ↗</a>
+            {% endif %}
+        </div>
+        {% if user.bio %}
+        <p class="profile-bio">{{ user.bio }}</p>
         {% endif %}
-    </table>
-</section>
+    </div>
+</div>
 
-{% if user.bio %}
-<section>
-    <h2>À propos</h2>
-    <p>{{ user.bio }}</p>
-</section>
-{% endif %}
-
-<section>
+<div class="card">
     <h2>Compétences</h2>
     {% if skills %}
-    <table>
-        <tr>
-            <th>Compétence</th>
-            <th>Niveau</th>
-            <th>Action</th>
-        </tr>
+    <ul class="skill-list">
         {% for skill in skills %}
-        <tr>
-            <td>{{ skill.name }}</td>
-            <td>{{ skill.level or "—" }}</td>
-            <td>
-                <form action="/portfolio/{{ user.id }}/skills/{{ skill.id }}/delete" method="post">
-                    <button type="submit">Supprimer</button>
-                </form>
-            </td>
-        </tr>
+        <li class="skill-pill">
+            <span>{{ skill.name }}</span>
+            <span class="badge {{ level_class.get(skill.level, 'badge') }}">{{ skill.level or "—" }}</span>
+            <form action="/portfolio/{{ user.id }}/skills/{{ skill.id }}/delete" method="post">
+                <button type="submit" class="btn btn-danger-ghost">Supprimer</button>
+            </form>
+        </li>
         {% endfor %}
-    </table>
+    </ul>
     {% else %}
-    <p>Aucune compétence ajoutée.</p>
+    <div class="empty-state">Aucune compétence ajoutée pour le moment.</div>
     {% endif %}
 
-    <h3>Ajouter une compétence</h3>
-    <form action="/portfolio/{{ user.id }}/skills/add" method="post">
-        <label>Compétence : <input type="text" name="name" required></label>
-        <label>Niveau :
-            <select name="level">
-                <option value="">—</option>
-                <option value="Débutant">Débutant</option>
-                <option value="Intermédiaire">Intermédiaire</option>
-                <option value="Expert">Expert</option>
-            </select>
-        </label>
-        <button type="submit">Ajouter</button>
-    </form>
-</section>
+    <div class="add-form-card">
+        <h3>Ajouter une compétence</h3>
+        <form action="/portfolio/{{ user.id }}/skills/add" method="post">
+            <div class="inline-fields">
+                <div class="field">
+                    <label for="skill-name">Compétence</label>
+                    <input id="skill-name" type="text" name="name" required>
+                </div>
+                <div class="field">
+                    <label for="skill-level">Niveau</label>
+                    <select id="skill-level" name="level">
+                        <option value="">—</option>
+                        <option value="Débutant">Débutant</option>
+                        <option value="Intermédiaire">Intermédiaire</option>
+                        <option value="Expert">Expert</option>
+                    </select>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Ajouter</button>
+        </form>
+    </div>
+</div>
 
-<section>
+<div class="card">
     <h2>Expériences</h2>
     {% if experiences %}
-    {% for exp in experiences %}
-    <div>
-        <h3>{{ exp.title }} — {{ exp.company }}</h3>
-        <p><em>{{ exp.start_date }} → {{ exp.end_date or "Présent" }}</em></p>
-        {% if exp.description %}
-        <p>{{ exp.description }}</p>
-        {% endif %}
-        <form action="/portfolio/{{ user.id }}/experiences/{{ exp.id }}/delete" method="post">
-            <button type="submit">Supprimer</button>
-        </form>
-    </div>
-    {% endfor %}
+    <ul class="timeline">
+        {% for exp in experiences %}
+        <li class="timeline-item">
+            <h3>{{ exp.title }} — {{ exp.company }}</h3>
+            <span class="timeline-dates">{{ exp.start_date }} → {{ exp.end_date or "Présent" }}</span>
+            {% if exp.description %}
+            <p>{{ exp.description }}</p>
+            {% endif %}
+            <form action="/portfolio/{{ user.id }}/experiences/{{ exp.id }}/delete" method="post">
+                <button type="submit" class="btn btn-danger-ghost">Supprimer</button>
+            </form>
+        </li>
+        {% endfor %}
+    </ul>
     {% else %}
-    <p>Aucune expérience ajoutée.</p>
+    <div class="empty-state">Aucune expérience ajoutée pour le moment.</div>
     {% endif %}
 
-    <h3>Ajouter une expérience</h3>
-    <form action="/portfolio/{{ user.id }}/experiences/add" method="post">
-        <label>Intitulé de la mission : <input type="text" name="title" required></label>
-        <label>Entreprise / Etablissement : <input type="text" name="company" required></label>
-        <label>Date de début : <input type="text" name="start_date" required></label>
-        <label>Date de fin : <input type="text" name="end_date" placeholder="Laisser vide si poste actuel"></label>
-        <label>Description : <textarea name="description" rows="3"></textarea></label>
-        <button type="submit">Ajouter</button>
-    </form>
-</section>
+    <div class="add-form-card">
+        <h3>Ajouter une expérience</h3>
+        <form action="/portfolio/{{ user.id }}/experiences/add" method="post">
+            <div class="inline-fields">
+                <div class="field">
+                    <label for="exp-title">Intitulé de la mission</label>
+                    <input id="exp-title" type="text" name="title" required>
+                </div>
+                <div class="field">
+                    <label for="exp-company">Entreprise / Établissement</label>
+                    <input id="exp-company" type="text" name="company" required>
+                </div>
+            </div>
+            <div class="inline-fields">
+                <div class="field">
+                    <label for="exp-start">Date de début</label>
+                    <input id="exp-start" type="text" name="start_date" required>
+                </div>
+                <div class="field">
+                    <label for="exp-end">Date de fin</label>
+                    <input id="exp-end" type="text" name="end_date" placeholder="Laisser vide si poste actuel">
+                </div>
+            </div>
+            <div class="field">
+                <label for="exp-description">Description</label>
+                <textarea id="exp-description" name="description" rows="3"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Ajouter</button>
+        </form>
+    </div>
+</div>
 
-<section>
+<div class="card">
     <h2>Formation</h2>
     {% if educations %}
-    {% for edu in educations %}
-    <div>
-        <h3>{{ edu.degree }} — {{ edu.school }}</h3>
-        <p><em>{{ edu.start_date }} → {{ edu.end_date or "En cours" }}</em></p>
-        {% if edu.description %}
-        <p>{{ edu.description }}</p>
-        {% endif %}
-        <form action="/portfolio/{{ user.id }}/educations/{{ edu.id }}/delete" method="post">
-            <button type="submit">Supprimer</button>
-        </form>
-    </div>
-    {% endfor %}
+    <ul class="timeline">
+        {% for edu in educations %}
+        <li class="timeline-item">
+            <h3>{{ edu.degree }} — {{ edu.school }}</h3>
+            <span class="timeline-dates">{{ edu.start_date }} → {{ edu.end_date or "En cours" }}</span>
+            {% if edu.description %}
+            <p>{{ edu.description }}</p>
+            {% endif %}
+            <form action="/portfolio/{{ user.id }}/educations/{{ edu.id }}/delete" method="post">
+                <button type="submit" class="btn btn-danger-ghost">Supprimer</button>
+            </form>
+        </li>
+        {% endfor %}
+    </ul>
     {% else %}
-    <p>Aucune formation ajoutée.</p>
+    <div class="empty-state">Aucune formation ajoutée pour le moment.</div>
     {% endif %}
 
-    <h3>Ajouter une formation</h3>
-    <form action="/portfolio/{{ user.id }}/educations/add" method="post">
-        <label>Diplôme : <input type="text" name="degree" required></label>
-        <label>Établissement : <input type="text" name="school" required></label>
-        <label>Date de début : <input type="text" name="start_date" required></label>
-        <label>Date de fin : <input type="text" name="end_date" placeholder="Laisser vide si en cours"></label>
-        <label>Description : <textarea name="description" rows="3"></textarea></label>
-        <button type="submit">Ajouter</button>
-    </form>
-</section>
+    <div class="add-form-card">
+        <h3>Ajouter une formation</h3>
+        <form action="/portfolio/{{ user.id }}/educations/add" method="post">
+            <div class="inline-fields">
+                <div class="field">
+                    <label for="edu-degree">Diplôme</label>
+                    <input id="edu-degree" type="text" name="degree" required>
+                </div>
+                <div class="field">
+                    <label for="edu-school">Établissement</label>
+                    <input id="edu-school" type="text" name="school" required>
+                </div>
+            </div>
+            <div class="inline-fields">
+                <div class="field">
+                    <label for="edu-start">Date de début</label>
+                    <input id="edu-start" type="text" name="start_date" required>
+                </div>
+                <div class="field">
+                    <label for="edu-end">Date de fin</label>
+                    <input id="edu-end" type="text" name="end_date" placeholder="Laisser vide si en cours">
+                </div>
+            </div>
+            <div class="field">
+                <label for="edu-description">Description</label>
+                <textarea id="edu-description" name="description" rows="3"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Ajouter</button>
+        </form>
+    </div>
+</div>
 
-<section>
+<div class="card">
     <h2>Partager ce portfolio</h2>
-    <p>Lien direct : <code>/portfolio/{{ user.id }}</code></p>
-</section>
+    <div class="share-box">
+        <code>/portfolio/{{ user.id }}</code>
+    </div>
+</div>
 {% endblock %}

@@ -4,36 +4,23 @@
 
 {% block content %}
 {% if users %}
-<table>
-    <thead>
-        <tr>
-            <th>Prénom</th>
-            <th>Nom</th>
-            <th>Nom d'utilisateur</th>
-            <th>Email</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for user in users %}
-        <tr>
-            <td>{{ user.firstname }}</td>
-            <td>{{ user.name }}</td>
-            <td>{{ user.username }}</td>
-            <td>{{ user.email }}</td>
-            <td>
-                <a href="/portfolio/{{ user.id }}">Voir</a>
-                &nbsp;|&nbsp;
-                <form action="/users/{{ user.id }}/delete" method="post" style="display:inline"
-                    onsubmit="return confirm('Supprimer le portfolio de {{ user.firstname }} ?')">
-                    <button type="submit">Supprimer</button>
-                </form>
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+<div class="directory-grid">
+    {% for user in users %}
+    <div class="directory-card">
+        <h3>{{ user.firstname }} {{ user.name }}</h3>
+        <p class="username">@{{ user.username }}</p>
+        <p class="email">{{ user.email }}</p>
+        <div class="actions">
+            <a href="/portfolio/{{ user.id }}" class="btn btn-primary">Voir</a>
+            <form action="/users/{{ user.id }}/delete" method="post"
+                onsubmit="return confirm('Supprimer le portfolio de {{ user.firstname }} ?')">
+                <button type="submit" class="btn btn-danger-ghost">Supprimer</button>
+            </form>
+        </div>
+    </div>
+    {% endfor %}
+</div>
 {% else %}
-<p>Aucun portfolio créé pour l'instant. <a href="/">Créer le premier !</a></p>
+<div class="empty-state">Aucun portfolio créé pour l'instant. <a href="/">Créer le premier !</a></div>
 {% endif %}
 {% endblock %}
