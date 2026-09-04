@@ -1,0 +1,5 @@
+# Section removal is reversible, never a delete
+
+Portfolios are becoming customizable: a User explicitly adds each Section (Skills, Experience, Education, Photo), and can later remove one. We decided that removing a Section ("Retirer") only hides it and preserves its underlying data — re-adding the Section restores exactly what was there, including previously-entered Skill/Experience/Education rows and any uploaded photo. This is deliberately different from the existing per-item delete ("Supprimer" on an individual Skill/Experience/Education entry), which stays a permanent, irreversible delete.
+
+We picked this over the simpler alternative — removing a Section cascades and deletes its rows — because "remove a whole section" reads as a big, easy-to-misclick action, and losing entered data as a side effect of what looks like a visibility toggle would be a surprising, costly mistake for a User to make. The two actions use different verbs on purpose ("Retirer" vs "Supprimer") so they're never confused as being the same kind of operation, even though both currently live on a page with no undo.

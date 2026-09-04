@@ -1,3 +1,5 @@
+import re
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import create_engine
@@ -12,6 +14,7 @@ def client(monkeypatch, tmp_path):
         f"sqlite:///{db_path}", connect_args={"check_same_thread": False}
     )
     monkeypatch.setattr(main, "engine", test_engine)
+    monkeypatch.setattr(main, "UPLOAD_DIR", str(tmp_path / "uploads"))
     with TestClient(main.app) as test_client:
         yield test_client
 
@@ -48,13 +51,15 @@ def test_create_user_redirects_and_persists(client):
     assert "jdupont@example.com" in response.text
 
 
-def test_portfolio_shows_empty_states_when_no_entries(client):
+def test_portfolio_starts_with_no_active_sections(client):
     user_id = create_user(client)
     response = client.get(f"/portfolio/{user_id}")
     assert response.status_code == 200
-    assert "Aucune compétence" in response.text
-    assert "Aucune expérience" in response.text
-    assert "Aucune formation" in response.text
+    assert "Ajouter la section Compétences" in response.text
+    assert "Ajouter la section Expériences" in response.text
+    assert "Ajouter la section Formation" in response.text
+    assert "Ajouter la section Photo" in response.text
+    assert "Aucune compétence" not in response.text
 
 
 def test_portfolio_not_found_returns_404(client):
@@ -164,8 +169,110 @@ def test_delete_user_removes_portfolio(client):
     assert portfolio_response.status_code == 404
 
 
+def test_adding_skill_activates_its_section(client):
+    user_id = create_user(client)
+    client.post(
+        f"/portfolio/{user_id}/skills/add",
+        data={"name": "Python", "level": "Expert"},
+        follow_redirects=False,
+    )
+    page = client.get(f"/portfolio/{user_id}")
+    assert "Retirer la section Compétences" in page.text
+    assert "Ajouter la section Compétences" not in page.text
+
+
+def test_retiring_section_preserves_data_and_readding_restores_it(client):
+    user_id = create_user(client)
+    client.post(
+        f"/portfolio/{user_id}/skills/add",
+        data={"name": "Python", "level": "Expert"},
+        follow_redirects=False,
+    )
+
+    remove_response = client.post(
+        f"/portfolio/{user_id}/sections/skills/remove", follow_redirects=False
+    )
+    assert remove_response.status_code == 303
+    page_after_remove = client.get(f"/portfolio/{user_id}")
+    assert "Python" not in page_after_remove.text
+    assert "Ajouter la section Compétences" in page_after_remove.text
+
+    add_back_response = client.post(
+        f"/portfolio/{user_id}/sections/skills/add", follow_redirects=False
+    )
+    assert add_back_response.status_code == 303
+    page_after_readd = client.get(f"/portfolio/{user_id}")
+    assert "Python" in page_after_readd.text
+
+
+def test_move_section_changes_display_order(client):
+    user_id = create_user(client)
+    client.post(
+        f"/portfolio/{user_id}/skills/add", data={"name": "Python"}, follow_redirects=False
+    )
+    client.post(
+        f"/portfolio/{user_id}/experiences/add",
+        data={"title": "Dev", "company": "Acme", "start_date": "2020"},
+        follow_redirects=False,
+    )
+
+    page_before = client.get(f"/portfolio/{user_id}").text
+    assert page_before.index(">Compétences<") < page_before.index(">Expériences<")
+
+    move_response = client.post(
+        f"/portfolio/{user_id}/sections/experience/move",
+        data={"direction": "up"},
+        follow_redirects=False,
+    )
+    assert move_response.status_code == 303
+    page_after = client.get(f"/portfolio/{user_id}").text
+    assert page_after.index(">Expériences<") < page_after.index(">Compétences<")
+
+
+def test_move_item_changes_order_within_section(client):
+    user_id = create_user(client)
+    client.post(
+        f"/portfolio/{user_id}/skills/add", data={"name": "Python"}, follow_redirects=False
+    )
+    client.post(
+        f"/portfolio/{user_id}/skills/add", data={"name": "Rust"}, follow_redirects=False
+    )
+    page_before = client.get(f"/portfolio/{user_id}")
+    assert page_before.text.index("Python") < page_before.text.index("Rust")
+
+    python_id = _extract_first_id(page_before.text, "skills")
+    move_response = client.post(
+        f"/portfolio/{user_id}/skills/{python_id}/move",
+        data={"direction": "down"},
+        follow_redirects=False,
+    )
+    assert move_response.status_code == 303
+    page_after = client.get(f"/portfolio/{user_id}")
+    assert page_after.text.index("Rust") < page_after.text.index("Python")
+
+
+def test_photo_upload_activates_section_and_shows_image(client):
+    user_id = create_user(client)
+    upload_response = client.post(
+        f"/portfolio/{user_id}/photo/upload",
+        files={"photo": ("avatar.png", b"\x89PNG\r\n\x1a\n" + b"0" * 20, "image/png")},
+        follow_redirects=False,
+    )
+    assert upload_response.status_code == 303
+    page = client.get(f"/portfolio/{user_id}")
+    assert f"/static/uploads/user_{user_id}.png" in page.text
+    assert "Retirer la section Photo" in page.text
+
+
+def test_photo_upload_rejects_unsupported_extension(client):
+    user_id = create_user(client)
+    response = client.post(
+        f"/portfolio/{user_id}/photo/upload",
+        files={"photo": ("avatar.gif", b"GIF89a", "image/gif")},
+    )
+    assert response.status_code == 400
+
+
 def _extract_first_id(html: str, action_segment: str) -> str:
-    marker = f"/{action_segment}/"
-    start = html.index(marker) + len(marker)
-    end = html.index("/", start)
-    return html[start:end]
+    match = re.search(rf"/{action_segment}/(\d+)/", html)
+    return match.group(1)

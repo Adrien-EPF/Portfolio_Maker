@@ -5,8 +5,36 @@
 {% block content %}
 {% set level_class = {"Débutant": "badge-beginner", "Intermédiaire": "badge-intermediate", "Expert": "badge-expert"} %}
 
+{% macro section_controls(user_id, section_type, loop) %}
+<div class="section-controls">
+    <form action="/portfolio/{{ user_id }}/sections/{{ section_type }}/move" method="post">
+        <input type="hidden" name="direction" value="up">
+        <button type="submit" class="btn-icon" title="Monter la section" {% if loop.first %}disabled{% endif %}>↑</button>
+    </form>
+    <form action="/portfolio/{{ user_id }}/sections/{{ section_type }}/move" method="post">
+        <input type="hidden" name="direction" value="down">
+        <button type="submit" class="btn-icon" title="Descendre la section" {% if loop.last %}disabled{% endif %}>↓</button>
+    </form>
+</div>
+{% endmacro %}
+
+{% macro item_controls(base_url, loop) %}
+<form action="{{ base_url }}/move" method="post">
+    <input type="hidden" name="direction" value="up">
+    <button type="submit" class="btn-icon" title="Monter" {% if loop.first %}disabled{% endif %}>↑</button>
+</form>
+<form action="{{ base_url }}/move" method="post">
+    <input type="hidden" name="direction" value="down">
+    <button type="submit" class="btn-icon" title="Descendre" {% if loop.last %}disabled{% endif %}>↓</button>
+</form>
+{% endmacro %}
+
 <div class="card profile-hero">
+    {% if "photo" in active_types and user.photo_filename %}
+    <img class="profile-avatar-photo" src="/static/uploads/{{ user.photo_filename }}" alt="Photo de {{ user.firstname }}">
+    {% else %}
     <div class="profile-avatar">{{ user.firstname[:1] | upper }}{{ user.name[:1] | upper }}</div>
+    {% endif %}
     <div class="profile-info">
         <h2>{{ user.firstname }} {{ user.name }}</h2>
         <div class="profile-meta">
@@ -23,17 +51,26 @@
     </div>
 </div>
 
+{% for section in active_sections %}
+
+{% if section.section_type == "skills" %}
 <div class="card">
-    <h2>Compétences</h2>
+    <div class="section-head">
+        <h2>Compétences</h2>
+        {{ section_controls(user.id, "skills", loop) }}
+    </div>
     {% if skills %}
     <ul class="skill-list">
         {% for skill in skills %}
         <li class="skill-pill">
             <span>{{ skill.name }}</span>
             <span class="badge {{ level_class.get(skill.level, 'badge') }}">{{ skill.level or "—" }}</span>
-            <form action="/portfolio/{{ user.id }}/skills/{{ skill.id }}/delete" method="post">
-                <button type="submit" class="btn btn-danger-ghost">Supprimer</button>
-            </form>
+            <div class="item-controls">
+                {{ item_controls("/portfolio/" ~ user.id ~ "/skills/" ~ skill.id, loop) }}
+                <form action="/portfolio/{{ user.id }}/skills/{{ skill.id }}/delete" method="post">
+                    <button type="submit" class="btn btn-danger-ghost">Supprimer</button>
+                </form>
+            </div>
         </li>
         {% endfor %}
     </ul>
@@ -62,10 +99,20 @@
             <button type="submit" class="btn btn-primary">Ajouter</button>
         </form>
     </div>
+
+    <div class="section-remove">
+        <form action="/portfolio/{{ user.id }}/sections/skills/remove" method="post">
+            <button type="submit" class="btn btn-ghost">Retirer la section Compétences</button>
+        </form>
+    </div>
 </div>
 
+{% elif section.section_type == "experience" %}
 <div class="card">
-    <h2>Expériences</h2>
+    <div class="section-head">
+        <h2>Expériences</h2>
+        {{ section_controls(user.id, "experience", loop) }}
+    </div>
     {% if experiences %}
     <ul class="timeline">
         {% for exp in experiences %}
@@ -75,9 +122,12 @@
             {% if exp.description %}
             <p>{{ exp.description }}</p>
             {% endif %}
-            <form action="/portfolio/{{ user.id }}/experiences/{{ exp.id }}/delete" method="post">
-                <button type="submit" class="btn btn-danger-ghost">Supprimer</button>
-            </form>
+            <div class="item-controls">
+                {{ item_controls("/portfolio/" ~ user.id ~ "/experiences/" ~ exp.id, loop) }}
+                <form action="/portfolio/{{ user.id }}/experiences/{{ exp.id }}/delete" method="post">
+                    <button type="submit" class="btn btn-danger-ghost">Supprimer</button>
+                </form>
+            </div>
         </li>
         {% endfor %}
     </ul>
@@ -115,10 +165,20 @@
             <button type="submit" class="btn btn-primary">Ajouter</button>
         </form>
     </div>
+
+    <div class="section-remove">
+        <form action="/portfolio/{{ user.id }}/sections/experience/remove" method="post">
+            <button type="submit" class="btn btn-ghost">Retirer la section Expériences</button>
+        </form>
+    </div>
 </div>
 
+{% elif section.section_type == "education" %}
 <div class="card">
-    <h2>Formation</h2>
+    <div class="section-head">
+        <h2>Formation</h2>
+        {{ section_controls(user.id, "education", loop) }}
+    </div>
     {% if educations %}
     <ul class="timeline">
         {% for edu in educations %}
@@ -128,9 +188,12 @@
             {% if edu.description %}
             <p>{{ edu.description }}</p>
             {% endif %}
-            <form action="/portfolio/{{ user.id }}/educations/{{ edu.id }}/delete" method="post">
-                <button type="submit" class="btn btn-danger-ghost">Supprimer</button>
-            </form>
+            <div class="item-controls">
+                {{ item_controls("/portfolio/" ~ user.id ~ "/educations/" ~ edu.id, loop) }}
+                <form action="/portfolio/{{ user.id }}/educations/{{ edu.id }}/delete" method="post">
+                    <button type="submit" class="btn btn-danger-ghost">Supprimer</button>
+                </form>
+            </div>
         </li>
         {% endfor %}
     </ul>
@@ -168,7 +231,54 @@
             <button type="submit" class="btn btn-primary">Ajouter</button>
         </form>
     </div>
+
+    <div class="section-remove">
+        <form action="/portfolio/{{ user.id }}/sections/education/remove" method="post">
+            <button type="submit" class="btn btn-ghost">Retirer la section Formation</button>
+        </form>
+    </div>
 </div>
+
+{% elif section.section_type == "photo" %}
+<div class="card">
+    <div class="section-head">
+        <h2>Photo</h2>
+        {{ section_controls(user.id, "photo", loop) }}
+    </div>
+    {% if user.photo_filename %}
+    <img class="profile-photo-preview" src="/static/uploads/{{ user.photo_filename }}" alt="Photo de {{ user.firstname }}">
+    {% else %}
+    <div class="empty-state">Aucune photo ajoutée pour le moment.</div>
+    {% endif %}
+
+    <div class="add-form-card">
+        <h3>{% if user.photo_filename %}Changer la photo{% else %}Ajouter une photo{% endif %}</h3>
+        <form action="/portfolio/{{ user.id }}/photo/upload" method="post" enctype="multipart/form-data">
+            <div class="field">
+                <label for="photo-file">Fichier (jpg, png, webp — 5 Mo max)</label>
+                <input id="photo-file" type="file" name="photo" accept=".jpg,.jpeg,.png,.webp" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Téléverser</button>
+        </form>
+    </div>
+
+    <div class="section-remove">
+        <form action="/portfolio/{{ user.id }}/sections/photo/remove" method="post">
+            <button type="submit" class="btn btn-ghost">Retirer la section Photo</button>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+{% endfor %}
+
+{% for type in inactive_types %}
+<div class="card section-placeholder">
+    <form action="/portfolio/{{ user.id }}/sections/{{ type }}/add" method="post">
+        <button type="submit" class="btn btn-secondary btn-block">+ Ajouter la section {{ section_labels[type] }}</button>
+    </form>
+</div>
+{% endfor %}
 
 <div class="card">
     <h2>Partager ce portfolio</h2>

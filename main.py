@@ -1,15 +1,29 @@
+import os
 from typing import Annotated
-from fastapi import FastAPI, Request, Form, HTTPException
+from fastapi import FastAPI, Request, Form, HTTPException, File, UploadFile
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from sqlalchemy import text
 from sqlmodel import Field, Session, SQLModel, create_engine, select
- 
+
 DATABASE_URL = "sqlite:///./portfolio.db"
 connect_args = {"check_same_thread": False}
 engine = create_engine(DATABASE_URL, connect_args=connect_args)
- 
- 
+
+UPLOAD_DIR = "static/uploads"
+ALLOWED_PHOTO_EXTENSIONS = {"jpg", "jpeg", "png", "webp"}
+MAX_PHOTO_SIZE = 5 * 1024 * 1024
+
+SECTION_TYPES = ["skills", "experience", "education", "photo"]
+SECTION_LABELS = {
+    "skills": "Compétences",
+    "experience": "Expériences",
+    "education": "Formation",
+    "photo": "Photo",
+}
+
+
 class User(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     username: str
@@ -19,15 +33,17 @@ class User(SQLModel, table=True):
     phone: str
     github: str | None = None
     bio: str | None = None
- 
- 
+    photo_filename: str | None = None
+
+
 class Skill(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="user.id")
     name: str
     level: str | None = None
- 
- 
+    position: int = 0
+
+
 class Education(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="user.id")
@@ -36,8 +52,9 @@ class Education(SQLModel, table=True):
     start_date: str
     end_date: str | None = None
     description: str | None = None
- 
- 
+    position: int = 0
+
+
 class Experience(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="user.id")
@@ -46,29 +63,160 @@ class Experience(SQLModel, table=True):
     start_date: str
     end_date: str | None = None
     description: str | None = None
- 
- 
+    position: int = 0
+
+
+class PortfolioSection(SQLModel, table=True):
+    """A Section a User has added to their Portfolio. Row presence = active.
+    Removing a Section deletes only this row — the underlying Skill/Experience/
+    Education rows (or the uploaded photo) are never touched, so re-adding the
+    Section restores exactly what was there. See docs/adr/0002."""
+    id: int | None = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id")
+    section_type: str
+    position: int = 0
+
+
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
- 
- 
+
+
+def _table_has_column(conn, table: str, column: str) -> bool:
+    rows = conn.execute(text(f"PRAGMA table_info({table})")).fetchall()
+    return any(row[1] == column for row in rows)
+
+
+def _add_column_if_missing(conn, table: str, column: str, column_def: str):
+    if not _table_has_column(conn, table, column):
+        conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {column_def}"))
+
+
+def migrate_schema():
+    """Brings a pre-existing portfolio.db (created before Sections existed) up
+    to date. create_all() only creates missing tables, so tables that already
+    exist need their new columns added explicitly."""
+    with engine.connect() as conn:
+        for table in ("skill", "experience", "education"):
+            _add_column_if_missing(conn, table, "position", "position INTEGER DEFAULT 0")
+        _add_column_if_missing(conn, "user", "photo_filename", "photo_filename VARCHAR")
+        conn.commit()
+
+
+def backfill_sections():
+    """Existing Users already have Skill/Experience/Education rows from before
+    Sections were opt-in. Mark those Sections active so nothing they already
+    entered appears to vanish."""
+    with Session(engine) as session:
+        users = session.exec(select(User)).all()
+        for user in users:
+            active_types = {
+                s.section_type
+                for s in session.exec(
+                    select(PortfolioSection).where(PortfolioSection.user_id == user.id)
+                ).all()
+            }
+            position = len(active_types)
+            for section_type, model in (
+                ("skills", Skill),
+                ("experience", Experience),
+                ("education", Education),
+            ):
+                if section_type in active_types:
+                    continue
+                has_data = session.exec(
+                    select(model).where(model.user_id == user.id)
+                ).first()
+                if has_data:
+                    session.add(
+                        PortfolioSection(
+                            user_id=user.id, section_type=section_type, position=position
+                        )
+                    )
+                    position += 1
+        session.commit()
+
+
+def get_active_sections(session: Session, user_id: int) -> list[PortfolioSection]:
+    return session.exec(
+        select(PortfolioSection)
+        .where(PortfolioSection.user_id == user_id)
+        .order_by(PortfolioSection.position)
+    ).all()
+
+
+def ensure_section_active(session: Session, user_id: int, section_type: str) -> PortfolioSection:
+    existing = session.exec(
+        select(PortfolioSection).where(
+            PortfolioSection.user_id == user_id,
+            PortfolioSection.section_type == section_type,
+        )
+    ).first()
+    if existing:
+        return existing
+    sections = get_active_sections(session, user_id)
+    next_pos = (max((s.position for s in sections), default=-1)) + 1
+    section = PortfolioSection(user_id=user_id, section_type=section_type, position=next_pos)
+    session.add(section)
+    session.commit()
+    session.refresh(section)
+    return section
+
+
+def next_position(session: Session, model, user_id: int) -> int:
+    rows = session.exec(select(model).where(model.user_id == user_id)).all()
+    return max((row.position for row in rows), default=-1) + 1
+
+
+def move_item(session: Session, model, user_id: int, item_id: int, direction: str):
+    items = session.exec(
+        select(model).where(model.user_id == user_id).order_by(model.position)
+    ).all()
+    idx = next((i for i, item in enumerate(items) if item.id == item_id), None)
+    if idx is None:
+        raise HTTPException(status_code=404, detail="Élément introuvable")
+    swap_idx = idx - 1 if direction == "up" else idx + 1
+    if 0 <= swap_idx < len(items):
+        items[idx].position, items[swap_idx].position = items[swap_idx].position, items[idx].position
+        session.add(items[idx])
+        session.add(items[swap_idx])
+        session.commit()
+
+
+def move_section(session: Session, user_id: int, section_type: str, direction: str):
+    sections = get_active_sections(session, user_id)
+    idx = next((i for i, s in enumerate(sections) if s.section_type == section_type), None)
+    if idx is None:
+        return
+    swap_idx = idx - 1 if direction == "up" else idx + 1
+    if 0 <= swap_idx < len(sections):
+        sections[idx].position, sections[swap_idx].position = (
+            sections[swap_idx].position,
+            sections[idx].position,
+        )
+        session.add(sections[idx])
+        session.add(sections[swap_idx])
+        session.commit()
+
+
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
- 
- 
+
+
 @app.on_event("startup")
 def on_startup():
     create_db_and_tables()
- 
- 
+    migrate_schema()
+    backfill_sections()
+
+
 # Accueil / Création utilisateur
- 
+
 @app.get("/")
 def show_home(request: Request):
     return templates.TemplateResponse(request, "index.html", context={})
- 
- 
+
+
 @app.post("/")
 def create_user(
     request: Request,
@@ -89,31 +237,78 @@ def create_user(
         session.commit()
         session.refresh(user)
         return RedirectResponse(f"/portfolio/{user.id}", status_code=303)
- 
- 
+
+
 # Portfolio
- 
+
 @app.get("/portfolio/{user_id}")
 def show_portfolio(request: Request, user_id: int):
     with Session(engine) as session:
         user = session.get(User, user_id)
         if not user:
             raise HTTPException(status_code=404, detail="Utilisateur introuvable")
-        skills = session.exec(select(Skill).where(Skill.user_id == user_id)).all()
+        skills = session.exec(
+            select(Skill).where(Skill.user_id == user_id).order_by(Skill.position)
+        ).all()
         experiences = session.exec(
-            select(Experience).where(Experience.user_id == user_id)
+            select(Experience).where(Experience.user_id == user_id).order_by(Experience.position)
         ).all()
         educations = session.exec(
-            select(Education).where(Education.user_id == user_id)
+            select(Education).where(Education.user_id == user_id).order_by(Education.position)
         ).all()
+        active_sections = get_active_sections(session, user_id)
+        active_types = {s.section_type for s in active_sections}
+        inactive_types = [t for t in SECTION_TYPES if t not in active_types]
         return templates.TemplateResponse(
             request, "portfolio.html",
-            context={"user": user, "skills": skills, "experiences": experiences, "educations": educations},
+            context={
+                "user": user, "skills": skills, "experiences": experiences, "educations": educations,
+                "active_sections": active_sections, "active_types": active_types,
+                "inactive_types": inactive_types, "section_labels": SECTION_LABELS,
+            },
         )
- 
- 
+
+
+# Sections
+
+@app.post("/portfolio/{user_id}/sections/{section_type}/add")
+def add_section(user_id: int, section_type: str):
+    if section_type not in SECTION_TYPES:
+        raise HTTPException(status_code=404, detail="Section inconnue")
+    with Session(engine) as session:
+        user = session.get(User, user_id)
+        if not user:
+            raise HTTPException(status_code=404, detail="Utilisateur introuvable")
+        ensure_section_active(session, user_id, section_type)
+    return RedirectResponse(f"/portfolio/{user_id}", status_code=303)
+
+
+@app.post("/portfolio/{user_id}/sections/{section_type}/remove")
+def remove_section(user_id: int, section_type: str):
+    with Session(engine) as session:
+        section = session.exec(
+            select(PortfolioSection).where(
+                PortfolioSection.user_id == user_id,
+                PortfolioSection.section_type == section_type,
+            )
+        ).first()
+        if section:
+            session.delete(section)
+            session.commit()
+    return RedirectResponse(f"/portfolio/{user_id}", status_code=303)
+
+
+@app.post("/portfolio/{user_id}/sections/{section_type}/move")
+def move_section_route(user_id: int, section_type: str, direction: Annotated[str, Form()]):
+    if direction not in ("up", "down"):
+        raise HTTPException(status_code=400, detail="Direction invalide")
+    with Session(engine) as session:
+        move_section(session, user_id, section_type, direction)
+    return RedirectResponse(f"/portfolio/{user_id}", status_code=303)
+
+
 # Skills
- 
+
 @app.post("/portfolio/{user_id}/skills/add")
 def add_skill(
     user_id: int,
@@ -121,12 +316,14 @@ def add_skill(
     level: Annotated[str, Form()] = "",
 ):
     with Session(engine) as session:
-        skill = Skill(user_id=user_id, name=name, level=level or None)
+        ensure_section_active(session, user_id, "skills")
+        position = next_position(session, Skill, user_id)
+        skill = Skill(user_id=user_id, name=name, level=level or None, position=position)
         session.add(skill)
         session.commit()
     return RedirectResponse(f"/portfolio/{user_id}", status_code=303)
- 
- 
+
+
 @app.post("/portfolio/{user_id}/skills/{skill_id}/delete")
 def delete_skill(user_id: int, skill_id: int):
     with Session(engine) as session:
@@ -136,10 +333,19 @@ def delete_skill(user_id: int, skill_id: int):
         session.delete(skill)
         session.commit()
     return RedirectResponse(f"/portfolio/{user_id}", status_code=303)
- 
- 
+
+
+@app.post("/portfolio/{user_id}/skills/{skill_id}/move")
+def move_skill(user_id: int, skill_id: int, direction: Annotated[str, Form()]):
+    if direction not in ("up", "down"):
+        raise HTTPException(status_code=400, detail="Direction invalide")
+    with Session(engine) as session:
+        move_item(session, Skill, user_id, skill_id, direction)
+    return RedirectResponse(f"/portfolio/{user_id}", status_code=303)
+
+
 # Expériences
- 
+
 @app.post("/portfolio/{user_id}/experiences/add")
 def add_experience(
     user_id: int,
@@ -150,17 +356,20 @@ def add_experience(
     description: Annotated[str, Form()] = "",
 ):
     with Session(engine) as session:
+        ensure_section_active(session, user_id, "experience")
+        position = next_position(session, Experience, user_id)
         exp = Experience(
             user_id=user_id, title=title, company=company,
             start_date=start_date,
             end_date=end_date or None,
             description=description or None,
+            position=position,
         )
         session.add(exp)
         session.commit()
     return RedirectResponse(f"/portfolio/{user_id}", status_code=303)
- 
- 
+
+
 @app.post("/portfolio/{user_id}/experiences/{exp_id}/delete")
 def delete_experience(user_id: int, exp_id: int):
     with Session(engine) as session:
@@ -170,10 +379,19 @@ def delete_experience(user_id: int, exp_id: int):
         session.delete(exp)
         session.commit()
     return RedirectResponse(f"/portfolio/{user_id}", status_code=303)
- 
- 
+
+
+@app.post("/portfolio/{user_id}/experiences/{exp_id}/move")
+def move_experience(user_id: int, exp_id: int, direction: Annotated[str, Form()]):
+    if direction not in ("up", "down"):
+        raise HTTPException(status_code=400, detail="Direction invalide")
+    with Session(engine) as session:
+        move_item(session, Experience, user_id, exp_id, direction)
+    return RedirectResponse(f"/portfolio/{user_id}", status_code=303)
+
+
 # Formations
- 
+
 @app.post("/portfolio/{user_id}/educations/add")
 def add_education(
     user_id: int,
@@ -184,17 +402,20 @@ def add_education(
     description: Annotated[str, Form()] = "",
 ):
     with Session(engine) as session:
+        ensure_section_active(session, user_id, "education")
+        position = next_position(session, Education, user_id)
         edu = Education(
             user_id=user_id, degree=degree, school=school,
             start_date=start_date,
             end_date=end_date or None,
             description=description or None,
+            position=position,
         )
         session.add(edu)
         session.commit()
     return RedirectResponse(f"/portfolio/{user_id}", status_code=303)
- 
- 
+
+
 @app.post("/portfolio/{user_id}/educations/{edu_id}/delete")
 def delete_education(user_id: int, edu_id: int):
     with Session(engine) as session:
@@ -204,10 +425,55 @@ def delete_education(user_id: int, edu_id: int):
         session.delete(edu)
         session.commit()
     return RedirectResponse(f"/portfolio/{user_id}", status_code=303)
- 
- 
+
+
+@app.post("/portfolio/{user_id}/educations/{edu_id}/move")
+def move_education(user_id: int, edu_id: int, direction: Annotated[str, Form()]):
+    if direction not in ("up", "down"):
+        raise HTTPException(status_code=400, detail="Direction invalide")
+    with Session(engine) as session:
+        move_item(session, Education, user_id, edu_id, direction)
+    return RedirectResponse(f"/portfolio/{user_id}", status_code=303)
+
+
+# Photo
+
+@app.post("/portfolio/{user_id}/photo/upload")
+async def upload_photo(user_id: int, photo: Annotated[UploadFile, File()]):
+    filename = photo.filename or ""
+    ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+    if ext not in ALLOWED_PHOTO_EXTENSIONS:
+        raise HTTPException(
+            status_code=400, detail="Format de photo non supporté (jpg, png, webp uniquement)"
+        )
+    contents = await photo.read()
+    if len(contents) > MAX_PHOTO_SIZE:
+        raise HTTPException(status_code=400, detail="Photo trop volumineuse (5 Mo maximum)")
+
+    with Session(engine) as session:
+        user = session.get(User, user_id)
+        if not user:
+            raise HTTPException(status_code=404, detail="Utilisateur introuvable")
+
+        os.makedirs(UPLOAD_DIR, exist_ok=True)
+        if user.photo_filename:
+            old_path = os.path.join(UPLOAD_DIR, user.photo_filename)
+            if os.path.exists(old_path):
+                os.remove(old_path)
+
+        new_filename = f"user_{user_id}.{ext}"
+        with open(os.path.join(UPLOAD_DIR, new_filename), "wb") as f:
+            f.write(contents)
+
+        user.photo_filename = new_filename
+        session.add(user)
+        ensure_section_active(session, user_id, "photo")
+        session.commit()
+    return RedirectResponse(f"/portfolio/{user_id}", status_code=303)
+
+
 # Liste utilisateurs
- 
+
 @app.get("/users")
 def list_users(request: Request):
     with Session(engine) as session:
@@ -215,21 +481,29 @@ def list_users(request: Request):
         return templates.TemplateResponse(
             request, "users.html", context={"users": users}
         )
- 
- 
+
+
 @app.post("/users/{user_id}/delete")
 def delete_user(user_id: int):
     with Session(engine) as session:
         user = session.get(User, user_id)
         if not user:
             raise HTTPException(status_code=404, detail="Utilisateur introuvable")
-        
+
         for skill in session.exec(select(Skill).where(Skill.user_id == user_id)).all():
             session.delete(skill)
         for exp in session.exec(select(Experience).where(Experience.user_id == user_id)).all():
             session.delete(exp)
         for edu in session.exec(select(Education).where(Education.user_id == user_id)).all():
             session.delete(edu)
+        for section in session.exec(
+            select(PortfolioSection).where(PortfolioSection.user_id == user_id)
+        ).all():
+            session.delete(section)
+        if user.photo_filename:
+            photo_path = os.path.join(UPLOAD_DIR, user.photo_filename)
+            if os.path.exists(photo_path):
+                os.remove(photo_path)
         session.delete(user)
         session.commit()
         return RedirectResponse("/users", status_code=303)
