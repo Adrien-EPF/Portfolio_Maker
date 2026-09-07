@@ -273,6 +273,337 @@ def test_photo_upload_rejects_unsupported_extension(client):
     assert response.status_code == 400
 
 
+# Sections chosen and populated at creation time
+
+
+def test_create_user_with_section_entries_activates_and_populates(client):
+    response = client.post(
+        "/",
+        data={
+            "username": "jdupont",
+            "email": "jdupont@example.com",
+            "name": "Dupont",
+            "firstname": "Jean",
+            "phone": "0600000000",
+            "activate_skills": "on",
+            "skill_name": "Python",
+            "skill_level": "Expert",
+            "activate_experience": "on",
+            "exp_title": "Développeur",
+            "exp_company": "Acme",
+            "exp_start_date": "2020",
+            "activate_education": "on",
+            "edu_degree": "Master Informatique",
+            "edu_school": "Université de Montpellier",
+            "edu_start_date": "2023",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    user_id = int(response.headers["location"].rsplit("/", 1)[-1])
+    page = client.get(f"/portfolio/{user_id}")
+    assert "Retirer la section Compétences" in page.text
+    assert "Python" in page.text
+    assert "Retirer la section Expériences" in page.text
+    assert "Développeur" in page.text and "Acme" in page.text
+    assert "Retirer la section Formation" in page.text
+    assert "Master Informatique" in page.text
+
+
+def test_create_user_with_ticked_section_and_blank_entry_activates_with_no_items(client):
+    response = client.post(
+        "/",
+        data={
+            "username": "jdupont",
+            "email": "jdupont@example.com",
+            "name": "Dupont",
+            "firstname": "Jean",
+            "phone": "0600000000",
+            "activate_skills": "on",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    user_id = int(response.headers["location"].rsplit("/", 1)[-1])
+    page = client.get(f"/portfolio/{user_id}")
+    assert "Retirer la section Compétences" in page.text
+    assert "Aucune compétence ajoutée pour le moment." in page.text
+
+
+def test_create_user_with_partial_experience_fields_is_rejected(client):
+    response = client.post(
+        "/",
+        data={
+            "username": "jdupont",
+            "email": "jdupont@example.com",
+            "name": "Dupont",
+            "firstname": "Jean",
+            "phone": "0600000000",
+            "activate_experience": "on",
+            "exp_title": "Développeur",
+        },
+    )
+    assert response.status_code == 400
+
+
+def test_create_user_with_partial_education_fields_is_rejected(client):
+    response = client.post(
+        "/",
+        data={
+            "username": "jdupont",
+            "email": "jdupont@example.com",
+            "name": "Dupont",
+            "firstname": "Jean",
+            "phone": "0600000000",
+            "activate_education": "on",
+            "edu_degree": "Master Informatique",
+        },
+    )
+    assert response.status_code == 400
+
+
+def test_create_user_with_photo_activates_photo_section(client):
+    response = client.post(
+        "/",
+        data={
+            "username": "jdupont",
+            "email": "jdupont@example.com",
+            "name": "Dupont",
+            "firstname": "Jean",
+            "phone": "0600000000",
+            "activate_photo": "on",
+        },
+        files={"photo": ("avatar.png", b"\x89PNG\r\n\x1a\n" + b"0" * 20, "image/png")},
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    user_id = int(response.headers["location"].rsplit("/", 1)[-1])
+    page = client.get(f"/portfolio/{user_id}")
+    assert f"/static/uploads/user_{user_id}.png" in page.text
+    assert "Retirer la section Photo" in page.text
+
+
+# Profile editing
+
+
+def test_edit_profile_updates_displayed_info(client):
+    user_id = create_user(client)
+    response = client.post(
+        f"/portfolio/{user_id}/edit",
+        data={
+            "username": "jdupont2",
+            "email": "jean.dupont@example.com",
+            "name": "Dupont",
+            "firstname": "Jean",
+            "phone": "0611111111",
+            "github": "https://github.com/jdupont",
+            "bio": "Développeur passionné",
+        },
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    page = client.get(f"/portfolio/{user_id}")
+    assert "jdupont2" in page.text
+    assert "jean.dupont@example.com" in page.text
+    assert "0611111111" in page.text
+    assert "Développeur passionné" in page.text
+
+
+def test_edit_profile_form_is_prefilled(client):
+    user_id = create_user(client)
+    page = client.get(f"/portfolio/{user_id}?edit=profile")
+    assert page.status_code == 200
+    assert 'value="jdupont"' in page.text
+    assert 'value="jdupont@example.com"' in page.text
+
+
+def test_edit_profile_missing_required_field_is_rejected(client):
+    user_id = create_user(client)
+    response = client.post(
+        f"/portfolio/{user_id}/edit",
+        data={
+            "email": "jdupont@example.com",
+            "name": "Dupont",
+            "firstname": "Jean",
+            "phone": "0600000000",
+        },
+    )
+    assert response.status_code == 422
+
+
+def test_edit_profile_nonexistent_user_returns_404(client):
+    response = client.post(
+        "/portfolio/999/edit",
+        data={
+            "username": "x",
+            "email": "x@example.com",
+            "name": "X",
+            "firstname": "X",
+            "phone": "0",
+        },
+    )
+    assert response.status_code == 404
+
+
+# Editing individual Skill/Experience/Education entries
+
+
+def test_edit_skill_updates_value_and_keeps_position(client):
+    user_id = create_user(client)
+    client.post(
+        f"/portfolio/{user_id}/skills/add", data={"name": "Python", "level": "Expert"}, follow_redirects=False
+    )
+    client.post(
+        f"/portfolio/{user_id}/skills/add", data={"name": "Rust", "level": "Débutant"}, follow_redirects=False
+    )
+    page_before = client.get(f"/portfolio/{user_id}")
+    python_id = _extract_first_id(page_before.text, "skills")
+
+    edit_response = client.post(
+        f"/portfolio/{user_id}/skills/{python_id}/edit",
+        data={"name": "Go", "level": "Intermédiaire"},
+        follow_redirects=False,
+    )
+    assert edit_response.status_code == 303
+    page_after = client.get(f"/portfolio/{user_id}")
+    assert "<span>Python</span>" not in page_after.text
+    assert "<span>Go</span>" in page_after.text
+    assert page_after.text.index("Go") < page_after.text.index("Rust")
+
+
+def test_edit_skill_form_is_prefilled(client):
+    user_id = create_user(client)
+    client.post(
+        f"/portfolio/{user_id}/skills/add", data={"name": "Python", "level": "Expert"}, follow_redirects=False
+    )
+    page = client.get(f"/portfolio/{user_id}")
+    skill_id = _extract_first_id(page.text, "skills")
+
+    edit_page = client.get(f"/portfolio/{user_id}?edit_skill={skill_id}")
+    assert edit_page.status_code == 200
+    assert 'value="Python"' in edit_page.text
+
+
+def test_edit_skill_wrong_user_returns_404(client):
+    user_id = create_user(client)
+    other_user_id = create_user(client, username="other", email="other@example.com")
+    client.post(f"/portfolio/{user_id}/skills/add", data={"name": "Python"}, follow_redirects=False)
+    page = client.get(f"/portfolio/{user_id}")
+    skill_id = _extract_first_id(page.text, "skills")
+
+    response = client.post(
+        f"/portfolio/{other_user_id}/skills/{skill_id}/edit", data={"name": "Go"}
+    )
+    assert response.status_code == 404
+
+
+def test_edit_experience_updates_value_and_keeps_position(client):
+    user_id = create_user(client)
+    client.post(
+        f"/portfolio/{user_id}/experiences/add",
+        data={"title": "Développeur", "company": "Acme", "start_date": "2020"},
+        follow_redirects=False,
+    )
+    client.post(
+        f"/portfolio/{user_id}/experiences/add",
+        data={"title": "Consultant", "company": "Beta", "start_date": "2022"},
+        follow_redirects=False,
+    )
+    page_before = client.get(f"/portfolio/{user_id}")
+    first_id = _extract_first_id(page_before.text, "experiences")
+
+    edit_response = client.post(
+        f"/portfolio/{user_id}/experiences/{first_id}/edit",
+        data={
+            "title": "Lead Développeur",
+            "company": "Acme",
+            "start_date": "2020",
+            "end_date": "2021",
+            "description": "Encadrement d une equipe technique",
+        },
+        follow_redirects=False,
+    )
+    assert edit_response.status_code == 303
+    page_after = client.get(f"/portfolio/{user_id}")
+    assert "<h3>Développeur — Acme</h3>" not in page_after.text
+    assert "<h3>Lead Développeur — Acme</h3>" in page_after.text
+    assert "Encadrement d une equipe technique" in page_after.text
+    assert page_after.text.index("Lead Développeur") < page_after.text.index("Consultant")
+
+
+def test_edit_experience_wrong_user_returns_404(client):
+    user_id = create_user(client)
+    other_user_id = create_user(client, username="other", email="other@example.com")
+    client.post(
+        f"/portfolio/{user_id}/experiences/add",
+        data={"title": "Développeur", "company": "Acme", "start_date": "2020"},
+        follow_redirects=False,
+    )
+    page = client.get(f"/portfolio/{user_id}")
+    exp_id = _extract_first_id(page.text, "experiences")
+
+    response = client.post(
+        f"/portfolio/{other_user_id}/experiences/{exp_id}/edit",
+        data={"title": "X", "company": "Y", "start_date": "2020"},
+    )
+    assert response.status_code == 404
+
+
+def test_edit_education_updates_value_and_keeps_position(client):
+    user_id = create_user(client)
+    client.post(
+        f"/portfolio/{user_id}/educations/add",
+        data={"degree": "Master Informatique", "school": "Université de Montpellier", "start_date": "2023"},
+        follow_redirects=False,
+    )
+    client.post(
+        f"/portfolio/{user_id}/educations/add",
+        data={
+            "degree": "Licence Informatique",
+            "school": "Université de Montpellier",
+            "start_date": "2020",
+            "end_date": "2023",
+        },
+        follow_redirects=False,
+    )
+    page_before = client.get(f"/portfolio/{user_id}")
+    first_id = _extract_first_id(page_before.text, "educations")
+
+    edit_response = client.post(
+        f"/portfolio/{user_id}/educations/{first_id}/edit",
+        data={
+            "degree": "Master Informatique (spécialité IA)",
+            "school": "Université de Montpellier",
+            "start_date": "2023",
+        },
+        follow_redirects=False,
+    )
+    assert edit_response.status_code == 303
+    page_after = client.get(f"/portfolio/{user_id}")
+    assert "Master Informatique (spécialité IA)" in page_after.text
+    assert page_after.text.index("Master Informatique (spécialité IA)") < page_after.text.index(
+        "Licence Informatique"
+    )
+
+
+def test_edit_education_wrong_user_returns_404(client):
+    user_id = create_user(client)
+    other_user_id = create_user(client, username="other", email="other@example.com")
+    client.post(
+        f"/portfolio/{user_id}/educations/add",
+        data={"degree": "Master Informatique", "school": "Université de Montpellier", "start_date": "2023"},
+        follow_redirects=False,
+    )
+    page = client.get(f"/portfolio/{user_id}")
+    edu_id = _extract_first_id(page.text, "educations")
+
+    response = client.post(
+        f"/portfolio/{other_user_id}/educations/{edu_id}/edit",
+        data={"degree": "X", "school": "Y", "start_date": "2020"},
+    )
+    assert response.status_code == 404
+
+
 def _extract_first_id(html: str, action_segment: str) -> str:
     match = re.search(rf"/{action_segment}/(\d+)/", html)
     return match.group(1)

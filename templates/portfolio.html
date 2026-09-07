@@ -29,6 +29,60 @@
 </form>
 {% endmacro %}
 
+{% if editing_profile %}
+<div class="card">
+    <div class="section-head">
+        <h2>Modifier mon profil</h2>
+    </div>
+    <form action="/portfolio/{{ user.id }}/edit" method="post">
+        <fieldset>
+            <legend>Identité</legend>
+            <div class="field">
+                <label for="edit-username">Nom d'utilisateur <span class="required">*</span></label>
+                <input id="edit-username" type="text" name="username" value="{{ user.username }}" required />
+            </div>
+            <div class="inline-fields">
+                <div class="field">
+                    <label for="edit-firstname">Prénom <span class="required">*</span></label>
+                    <input id="edit-firstname" type="text" name="firstname" value="{{ user.firstname }}" required />
+                </div>
+                <div class="field">
+                    <label for="edit-name">Nom <span class="required">*</span></label>
+                    <input id="edit-name" type="text" name="name" value="{{ user.name }}" required />
+                </div>
+            </div>
+        </fieldset>
+        <fieldset>
+            <legend>Contact</legend>
+            <div class="inline-fields">
+                <div class="field">
+                    <label for="edit-email">Email <span class="required">*</span></label>
+                    <input id="edit-email" type="email" name="email" value="{{ user.email }}" required />
+                </div>
+                <div class="field">
+                    <label for="edit-phone">Téléphone <span class="required">*</span></label>
+                    <input id="edit-phone" type="tel" name="phone" value="{{ user.phone }}" required />
+                </div>
+            </div>
+        </fieldset>
+        <fieldset>
+            <legend>En savoir plus (optionnel)</legend>
+            <div class="field">
+                <label for="edit-github">GitHub</label>
+                <input id="edit-github" type="text" name="github" value="{{ user.github or '' }}" placeholder="https://github.com/..." />
+            </div>
+            <div class="field">
+                <label for="edit-bio">Bio / Description</label>
+                <textarea id="edit-bio" name="bio" rows="4">{{ user.bio or '' }}</textarea>
+            </div>
+        </fieldset>
+        <div class="item-controls">
+            <button type="submit" class="btn btn-primary">Enregistrer</button>
+            <a href="/portfolio/{{ user.id }}" class="btn btn-ghost">Annuler</a>
+        </div>
+    </form>
+</div>
+{% else %}
 <div class="card profile-hero">
     {% if "photo" in active_types and user.photo_filename %}
     <img class="profile-avatar-photo" src="/static/uploads/{{ user.photo_filename }}" alt="Photo de {{ user.firstname }}">
@@ -36,7 +90,10 @@
     <div class="profile-avatar">{{ user.firstname[:1] | upper }}{{ user.name[:1] | upper }}</div>
     {% endif %}
     <div class="profile-info">
-        <h2>{{ user.firstname }} {{ user.name }}</h2>
+        <div class="section-head">
+            <h2>{{ user.firstname }} {{ user.name }}</h2>
+            <a href="/portfolio/{{ user.id }}?edit=profile" class="btn btn-ghost">Modifier</a>
+        </div>
         <div class="profile-meta">
             <span>@{{ user.username }}</span>
             <a href="mailto:{{ user.email }}">{{ user.email }}</a>
@@ -50,6 +107,7 @@
         {% endif %}
     </div>
 </div>
+{% endif %}
 
 {% for section in active_sections %}
 
@@ -63,14 +121,35 @@
     <ul class="skill-list">
         {% for skill in skills %}
         <li class="skill-pill">
+            {% if editing_skill_id == skill.id %}
+            <form action="/portfolio/{{ user.id }}/skills/{{ skill.id }}/edit" method="post" class="inline-fields">
+                <div class="field">
+                    <input type="text" name="name" value="{{ skill.name }}" required>
+                </div>
+                <div class="field">
+                    <select name="level">
+                        <option value="" {% if not skill.level %}selected{% endif %}>—</option>
+                        <option value="Débutant" {% if skill.level == "Débutant" %}selected{% endif %}>Débutant</option>
+                        <option value="Intermédiaire" {% if skill.level == "Intermédiaire" %}selected{% endif %}>Intermédiaire</option>
+                        <option value="Expert" {% if skill.level == "Expert" %}selected{% endif %}>Expert</option>
+                    </select>
+                </div>
+                <div class="item-controls">
+                    <button type="submit" class="btn btn-primary">Enregistrer</button>
+                    <a href="/portfolio/{{ user.id }}" class="btn btn-ghost">Annuler</a>
+                </div>
+            </form>
+            {% else %}
             <span>{{ skill.name }}</span>
             <span class="badge {{ level_class.get(skill.level, 'badge') }}">{{ skill.level or "—" }}</span>
             <div class="item-controls">
                 {{ item_controls("/portfolio/" ~ user.id ~ "/skills/" ~ skill.id, loop) }}
+                <a href="/portfolio/{{ user.id }}?edit_skill={{ skill.id }}" class="btn-icon" title="Modifier">✎</a>
                 <form action="/portfolio/{{ user.id }}/skills/{{ skill.id }}/delete" method="post">
                     <button type="submit" class="btn btn-danger-ghost">Supprimer</button>
                 </form>
             </div>
+            {% endif %}
         </li>
         {% endfor %}
     </ul>
@@ -117,6 +196,38 @@
     <ul class="timeline">
         {% for exp in experiences %}
         <li class="timeline-item">
+            {% if editing_experience_id == exp.id %}
+            <form action="/portfolio/{{ user.id }}/experiences/{{ exp.id }}/edit" method="post">
+                <div class="inline-fields">
+                    <div class="field">
+                        <label for="edit-exp-title-{{ exp.id }}">Intitulé de la mission</label>
+                        <input id="edit-exp-title-{{ exp.id }}" type="text" name="title" value="{{ exp.title }}" required>
+                    </div>
+                    <div class="field">
+                        <label for="edit-exp-company-{{ exp.id }}">Entreprise / Établissement</label>
+                        <input id="edit-exp-company-{{ exp.id }}" type="text" name="company" value="{{ exp.company }}" required>
+                    </div>
+                </div>
+                <div class="inline-fields">
+                    <div class="field">
+                        <label for="edit-exp-start-{{ exp.id }}">Date de début</label>
+                        <input id="edit-exp-start-{{ exp.id }}" type="text" name="start_date" value="{{ exp.start_date }}" required>
+                    </div>
+                    <div class="field">
+                        <label for="edit-exp-end-{{ exp.id }}">Date de fin</label>
+                        <input id="edit-exp-end-{{ exp.id }}" type="text" name="end_date" value="{{ exp.end_date or '' }}" placeholder="Laisser vide si poste actuel">
+                    </div>
+                </div>
+                <div class="field">
+                    <label for="edit-exp-description-{{ exp.id }}">Description</label>
+                    <textarea id="edit-exp-description-{{ exp.id }}" name="description" rows="3">{{ exp.description or '' }}</textarea>
+                </div>
+                <div class="item-controls">
+                    <button type="submit" class="btn btn-primary">Enregistrer</button>
+                    <a href="/portfolio/{{ user.id }}" class="btn btn-ghost">Annuler</a>
+                </div>
+            </form>
+            {% else %}
             <h3>{{ exp.title }} — {{ exp.company }}</h3>
             <span class="timeline-dates">{{ exp.start_date }} → {{ exp.end_date or "Présent" }}</span>
             {% if exp.description %}
@@ -124,10 +235,12 @@
             {% endif %}
             <div class="item-controls">
                 {{ item_controls("/portfolio/" ~ user.id ~ "/experiences/" ~ exp.id, loop) }}
+                <a href="/portfolio/{{ user.id }}?edit_experience={{ exp.id }}" class="btn-icon" title="Modifier">✎</a>
                 <form action="/portfolio/{{ user.id }}/experiences/{{ exp.id }}/delete" method="post">
                     <button type="submit" class="btn btn-danger-ghost">Supprimer</button>
                 </form>
             </div>
+            {% endif %}
         </li>
         {% endfor %}
     </ul>
@@ -183,6 +296,38 @@
     <ul class="timeline">
         {% for edu in educations %}
         <li class="timeline-item">
+            {% if editing_education_id == edu.id %}
+            <form action="/portfolio/{{ user.id }}/educations/{{ edu.id }}/edit" method="post">
+                <div class="inline-fields">
+                    <div class="field">
+                        <label for="edit-edu-degree-{{ edu.id }}">Diplôme</label>
+                        <input id="edit-edu-degree-{{ edu.id }}" type="text" name="degree" value="{{ edu.degree }}" required>
+                    </div>
+                    <div class="field">
+                        <label for="edit-edu-school-{{ edu.id }}">Établissement</label>
+                        <input id="edit-edu-school-{{ edu.id }}" type="text" name="school" value="{{ edu.school }}" required>
+                    </div>
+                </div>
+                <div class="inline-fields">
+                    <div class="field">
+                        <label for="edit-edu-start-{{ edu.id }}">Date de début</label>
+                        <input id="edit-edu-start-{{ edu.id }}" type="text" name="start_date" value="{{ edu.start_date }}" required>
+                    </div>
+                    <div class="field">
+                        <label for="edit-edu-end-{{ edu.id }}">Date de fin</label>
+                        <input id="edit-edu-end-{{ edu.id }}" type="text" name="end_date" value="{{ edu.end_date or '' }}" placeholder="Laisser vide si en cours">
+                    </div>
+                </div>
+                <div class="field">
+                    <label for="edit-edu-description-{{ edu.id }}">Description</label>
+                    <textarea id="edit-edu-description-{{ edu.id }}" name="description" rows="3">{{ edu.description or '' }}</textarea>
+                </div>
+                <div class="item-controls">
+                    <button type="submit" class="btn btn-primary">Enregistrer</button>
+                    <a href="/portfolio/{{ user.id }}" class="btn btn-ghost">Annuler</a>
+                </div>
+            </form>
+            {% else %}
             <h3>{{ edu.degree }} — {{ edu.school }}</h3>
             <span class="timeline-dates">{{ edu.start_date }} → {{ edu.end_date or "En cours" }}</span>
             {% if edu.description %}
@@ -190,10 +335,12 @@
             {% endif %}
             <div class="item-controls">
                 {{ item_controls("/portfolio/" ~ user.id ~ "/educations/" ~ edu.id, loop) }}
+                <a href="/portfolio/{{ user.id }}?edit_education={{ edu.id }}" class="btn-icon" title="Modifier">✎</a>
                 <form action="/portfolio/{{ user.id }}/educations/{{ edu.id }}/delete" method="post">
                     <button type="submit" class="btn btn-danger-ghost">Supprimer</button>
                 </form>
             </div>
+            {% endif %}
         </li>
         {% endfor %}
     </ul>

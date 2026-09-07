@@ -6,7 +6,7 @@
 <div class="card">
     <p>Remplissez le formulaire ci-dessous pour générer votre portfolio en ligne.</p>
 
-    <form action="/" method="post">
+    <form action="/" method="post" enctype="multipart/form-data">
         <fieldset>
             <legend>Identité</legend>
             <div class="field">
@@ -48,6 +48,106 @@
             <div class="field">
                 <label for="bio">Bio / Description</label>
                 <textarea id="bio" name="bio" rows="4" placeholder="Parlez de vous..."></textarea>
+            </div>
+        </fieldset>
+
+        <fieldset>
+            <legend>Sections (optionnel)</legend>
+            <p class="section-hint">Activez les sections que vous voulez remplir dès maintenant ; vous pourrez toujours en ajouter d'autres, ou modifier tout ceci, après.</p>
+
+            <div class="section-toggle">
+                <label class="checkbox-field">
+                    <input type="checkbox" name="activate_skills" />
+                    Compétences
+                </label>
+                <div class="inline-fields">
+                    <div class="field">
+                        <label for="skill-name">Compétence</label>
+                        <input id="skill-name" type="text" name="skill_name" />
+                    </div>
+                    <div class="field">
+                        <label for="skill-level">Niveau</label>
+                        <select id="skill-level" name="skill_level">
+                            <option value="">—</option>
+                            <option value="Débutant">Débutant</option>
+                            <option value="Intermédiaire">Intermédiaire</option>
+                            <option value="Expert">Expert</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-toggle">
+                <label class="checkbox-field">
+                    <input type="checkbox" name="activate_experience" />
+                    Expériences
+                </label>
+                <div class="inline-fields">
+                    <div class="field">
+                        <label for="exp-title">Intitulé de la mission</label>
+                        <input id="exp-title" type="text" name="exp_title" />
+                    </div>
+                    <div class="field">
+                        <label for="exp-company">Entreprise / Établissement</label>
+                        <input id="exp-company" type="text" name="exp_company" />
+                    </div>
+                </div>
+                <div class="inline-fields">
+                    <div class="field">
+                        <label for="exp-start">Date de début</label>
+                        <input id="exp-start" type="text" name="exp_start_date" />
+                    </div>
+                    <div class="field">
+                        <label for="exp-end">Date de fin</label>
+                        <input id="exp-end" type="text" name="exp_end_date" placeholder="Laisser vide si poste actuel" />
+                    </div>
+                </div>
+                <div class="field">
+                    <label for="exp-description">Description</label>
+                    <textarea id="exp-description" name="exp_description" rows="3"></textarea>
+                </div>
+            </div>
+
+            <div class="section-toggle">
+                <label class="checkbox-field">
+                    <input type="checkbox" name="activate_education" />
+                    Formation
+                </label>
+                <div class="inline-fields">
+                    <div class="field">
+                        <label for="edu-degree">Diplôme</label>
+                        <input id="edu-degree" type="text" name="edu_degree" />
+                    </div>
+                    <div class="field">
+                        <label for="edu-school">Établissement</label>
+                        <input id="edu-school" type="text" name="edu_school" />
+                    </div>
+                </div>
+                <div class="inline-fields">
+                    <div class="field">
+                        <label for="edu-start">Date de début</label>
+                        <input id="edu-start" type="text" name="edu_start_date" />
+                    </div>
+                    <div class="field">
+                        <label for="edu-end">Date de fin</label>
+                        <input id="edu-end" type="text" name="edu_end_date" placeholder="Laisser vide si en cours" />
+                    </div>
+                </div>
+                <div class="field">
+                    <label for="edu-description">Description</label>
+                    <textarea id="edu-description" name="edu_description" rows="3"></textarea>
+                </div>
+            </div>
+
+            <div class="section-toggle">
+                <label class="checkbox-field">
+                    <input type="checkbox" name="activate_photo" />
+                    Photo
+                </label>
+                <div class="field">
+                    <label for="create-photo-file">Fichier (jpg, png, webp — 5 Mo max)</label>
+                    <input id="create-photo-file" type="file" name="photo" accept=".jpg,.jpeg,.png,.webp" />
+                </div>
             </div>
         </fieldset>
 

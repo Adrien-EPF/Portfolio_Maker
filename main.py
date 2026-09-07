@@ -198,6 +198,27 @@ def move_section(session: Session, user_id: int, section_type: str, direction: s
         session.commit()
 
 
+async def _read_and_validate_photo(photo: UploadFile) -> tuple[bytes, str]:
+    filename = photo.filename or ""
+    ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+    if ext not in ALLOWED_PHOTO_EXTENSIONS:
+        raise HTTPException(
+            status_code=400, detail="Format de photo non supporté (jpg, png, webp uniquement)"
+        )
+    contents = await photo.read()
+    if len(contents) > MAX_PHOTO_SIZE:
+        raise HTTPException(status_code=400, detail="Photo trop volumineuse (5 Mo maximum)")
+    return contents, ext
+
+
+def _write_photo_file(user_id: int, ext: str, contents: bytes) -> str:
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+    filename = f"user_{user_id}.{ext}"
+    with open(os.path.join(UPLOAD_DIR, filename), "wb") as f:
+        f.write(contents)
+    return filename
+
+
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
@@ -218,7 +239,7 @@ def show_home(request: Request):
 
 
 @app.post("/")
-def create_user(
+async def create_user(
     request: Request,
     username: Annotated[str, Form()],
     email: Annotated[str, Form()],
@@ -227,7 +248,42 @@ def create_user(
     phone: Annotated[str, Form()],
     github: Annotated[str, Form()] = "",
     bio: Annotated[str, Form()] = "",
+    activate_skills: Annotated[str | None, Form()] = None,
+    skill_name: Annotated[str, Form()] = "",
+    skill_level: Annotated[str, Form()] = "",
+    activate_experience: Annotated[str | None, Form()] = None,
+    exp_title: Annotated[str, Form()] = "",
+    exp_company: Annotated[str, Form()] = "",
+    exp_start_date: Annotated[str, Form()] = "",
+    exp_end_date: Annotated[str, Form()] = "",
+    exp_description: Annotated[str, Form()] = "",
+    activate_education: Annotated[str | None, Form()] = None,
+    edu_degree: Annotated[str, Form()] = "",
+    edu_school: Annotated[str, Form()] = "",
+    edu_start_date: Annotated[str, Form()] = "",
+    edu_end_date: Annotated[str, Form()] = "",
+    edu_description: Annotated[str, Form()] = "",
+    activate_photo: Annotated[str | None, Form()] = None,
+    photo: Annotated[UploadFile | None, File()] = None,
 ):
+    exp_fields = (exp_title.strip(), exp_company.strip(), exp_start_date.strip())
+    if activate_experience and any(exp_fields) and not all(exp_fields):
+        raise HTTPException(
+            status_code=400,
+            detail="Expérience incomplète : intitulé, entreprise et date de début sont requis ensemble",
+        )
+
+    edu_fields = (edu_degree.strip(), edu_school.strip(), edu_start_date.strip())
+    if activate_education and any(edu_fields) and not all(edu_fields):
+        raise HTTPException(
+            status_code=400,
+            detail="Formation incomplète : diplôme, établissement et date de début sont requis ensemble",
+        )
+
+    photo_contents, photo_ext = None, None
+    if activate_photo and photo is not None and photo.filename:
+        photo_contents, photo_ext = await _read_and_validate_photo(photo)
+
     with Session(engine) as session:
         user = User(
             username=username, email=email, name=name,
@@ -236,13 +292,57 @@ def create_user(
         session.add(user)
         session.commit()
         session.refresh(user)
+
+        if activate_skills:
+            ensure_section_active(session, user.id, "skills")
+            if skill_name.strip():
+                session.add(
+                    Skill(user_id=user.id, name=skill_name, level=skill_level or None, position=0)
+                )
+
+        if activate_experience:
+            ensure_section_active(session, user.id, "experience")
+            if all(exp_fields):
+                session.add(
+                    Experience(
+                        user_id=user.id, title=exp_title, company=exp_company,
+                        start_date=exp_start_date, end_date=exp_end_date or None,
+                        description=exp_description or None, position=0,
+                    )
+                )
+
+        if activate_education:
+            ensure_section_active(session, user.id, "education")
+            if all(edu_fields):
+                session.add(
+                    Education(
+                        user_id=user.id, degree=edu_degree, school=edu_school,
+                        start_date=edu_start_date, end_date=edu_end_date or None,
+                        description=edu_description or None, position=0,
+                    )
+                )
+
+        if activate_photo:
+            ensure_section_active(session, user.id, "photo")
+            if photo_contents is not None:
+                user.photo_filename = _write_photo_file(user.id, photo_ext, photo_contents)
+                session.add(user)
+
+        session.commit()
         return RedirectResponse(f"/portfolio/{user.id}", status_code=303)
 
 
 # Portfolio
 
 @app.get("/portfolio/{user_id}")
-def show_portfolio(request: Request, user_id: int):
+def show_portfolio(
+    request: Request,
+    user_id: int,
+    edit: str | None = None,
+    edit_skill: int | None = None,
+    edit_experience: int | None = None,
+    edit_education: int | None = None,
+):
     with Session(engine) as session:
         user = session.get(User, user_id)
         if not user:
@@ -265,8 +365,39 @@ def show_portfolio(request: Request, user_id: int):
                 "user": user, "skills": skills, "experiences": experiences, "educations": educations,
                 "active_sections": active_sections, "active_types": active_types,
                 "inactive_types": inactive_types, "section_labels": SECTION_LABELS,
+                "editing_profile": edit == "profile",
+                "editing_skill_id": edit_skill,
+                "editing_experience_id": edit_experience,
+                "editing_education_id": edit_education,
             },
         )
+
+
+@app.post("/portfolio/{user_id}/edit")
+def edit_user(
+    user_id: int,
+    username: Annotated[str, Form()],
+    email: Annotated[str, Form()],
+    name: Annotated[str, Form()],
+    firstname: Annotated[str, Form()],
+    phone: Annotated[str, Form()],
+    github: Annotated[str, Form()] = "",
+    bio: Annotated[str, Form()] = "",
+):
+    with Session(engine) as session:
+        user = session.get(User, user_id)
+        if not user:
+            raise HTTPException(status_code=404, detail="Utilisateur introuvable")
+        user.username = username
+        user.email = email
+        user.name = name
+        user.firstname = firstname
+        user.phone = phone
+        user.github = github
+        user.bio = bio
+        session.add(user)
+        session.commit()
+    return RedirectResponse(f"/portfolio/{user_id}", status_code=303)
 
 
 # Sections
@@ -324,6 +455,24 @@ def add_skill(
     return RedirectResponse(f"/portfolio/{user_id}", status_code=303)
 
 
+@app.post("/portfolio/{user_id}/skills/{skill_id}/edit")
+def edit_skill(
+    user_id: int,
+    skill_id: int,
+    name: Annotated[str, Form()],
+    level: Annotated[str, Form()] = "",
+):
+    with Session(engine) as session:
+        skill = session.get(Skill, skill_id)
+        if not skill or skill.user_id != user_id:
+            raise HTTPException(status_code=404, detail="Compétence introuvable")
+        skill.name = name
+        skill.level = level or None
+        session.add(skill)
+        session.commit()
+    return RedirectResponse(f"/portfolio/{user_id}", status_code=303)
+
+
 @app.post("/portfolio/{user_id}/skills/{skill_id}/delete")
 def delete_skill(user_id: int, skill_id: int):
     with Session(engine) as session:
@@ -365,6 +514,30 @@ def add_experience(
             description=description or None,
             position=position,
         )
+        session.add(exp)
+        session.commit()
+    return RedirectResponse(f"/portfolio/{user_id}", status_code=303)
+
+
+@app.post("/portfolio/{user_id}/experiences/{exp_id}/edit")
+def edit_experience(
+    user_id: int,
+    exp_id: int,
+    title: Annotated[str, Form()],
+    company: Annotated[str, Form()],
+    start_date: Annotated[str, Form()],
+    end_date: Annotated[str, Form()] = "",
+    description: Annotated[str, Form()] = "",
+):
+    with Session(engine) as session:
+        exp = session.get(Experience, exp_id)
+        if not exp or exp.user_id != user_id:
+            raise HTTPException(status_code=404, detail="Expérience introuvable")
+        exp.title = title
+        exp.company = company
+        exp.start_date = start_date
+        exp.end_date = end_date or None
+        exp.description = description or None
         session.add(exp)
         session.commit()
     return RedirectResponse(f"/portfolio/{user_id}", status_code=303)
@@ -416,6 +589,30 @@ def add_education(
     return RedirectResponse(f"/portfolio/{user_id}", status_code=303)
 
 
+@app.post("/portfolio/{user_id}/educations/{edu_id}/edit")
+def edit_education(
+    user_id: int,
+    edu_id: int,
+    degree: Annotated[str, Form()],
+    school: Annotated[str, Form()],
+    start_date: Annotated[str, Form()],
+    end_date: Annotated[str, Form()] = "",
+    description: Annotated[str, Form()] = "",
+):
+    with Session(engine) as session:
+        edu = session.get(Education, edu_id)
+        if not edu or edu.user_id != user_id:
+            raise HTTPException(status_code=404, detail="Formation introuvable")
+        edu.degree = degree
+        edu.school = school
+        edu.start_date = start_date
+        edu.end_date = end_date or None
+        edu.description = description or None
+        session.add(edu)
+        session.commit()
+    return RedirectResponse(f"/portfolio/{user_id}", status_code=303)
+
+
 @app.post("/portfolio/{user_id}/educations/{edu_id}/delete")
 def delete_education(user_id: int, edu_id: int):
     with Session(engine) as session:
@@ -440,32 +637,19 @@ def move_education(user_id: int, edu_id: int, direction: Annotated[str, Form()])
 
 @app.post("/portfolio/{user_id}/photo/upload")
 async def upload_photo(user_id: int, photo: Annotated[UploadFile, File()]):
-    filename = photo.filename or ""
-    ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
-    if ext not in ALLOWED_PHOTO_EXTENSIONS:
-        raise HTTPException(
-            status_code=400, detail="Format de photo non supporté (jpg, png, webp uniquement)"
-        )
-    contents = await photo.read()
-    if len(contents) > MAX_PHOTO_SIZE:
-        raise HTTPException(status_code=400, detail="Photo trop volumineuse (5 Mo maximum)")
+    contents, ext = await _read_and_validate_photo(photo)
 
     with Session(engine) as session:
         user = session.get(User, user_id)
         if not user:
             raise HTTPException(status_code=404, detail="Utilisateur introuvable")
 
-        os.makedirs(UPLOAD_DIR, exist_ok=True)
         if user.photo_filename:
             old_path = os.path.join(UPLOAD_DIR, user.photo_filename)
             if os.path.exists(old_path):
                 os.remove(old_path)
 
-        new_filename = f"user_{user_id}.{ext}"
-        with open(os.path.join(UPLOAD_DIR, new_filename), "wb") as f:
-            f.write(contents)
-
-        user.photo_filename = new_filename
+        user.photo_filename = _write_photo_file(user_id, ext, contents)
         session.add(user)
         ensure_section_active(session, user_id, "photo")
         session.commit()
