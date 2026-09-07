@@ -231,14 +231,21 @@ def on_startup():
     backfill_sections()
 
 
-# Accueil / Création utilisateur
+# Accueil
 
 @app.get("/")
 def show_home(request: Request):
     return templates.TemplateResponse(request, "index.html", context={})
 
 
-@app.post("/")
+# Création utilisateur
+
+@app.get("/create")
+def show_create_form(request: Request):
+    return templates.TemplateResponse(request, "create.html", context={})
+
+
+@app.post("/create")
 async def create_user(
     request: Request,
     username: Annotated[str, Form()],

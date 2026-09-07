@@ -30,16 +30,30 @@ def create_user(client, **overrides):
         "bio": "",
     }
     data.update(overrides)
-    response = client.post("/", data=data, follow_redirects=False)
+    response = client.post("/create", data=data, follow_redirects=False)
     assert response.status_code == 303
     user_id = int(response.headers["location"].rsplit("/", 1)[-1])
     return user_id
 
 
-def test_home_page_shows_creation_form(client):
+def test_home_page_shows_two_choices(client):
     response = client.get("/")
     assert response.status_code == 200
+    assert 'href="/create"' in response.text
+    assert 'href="/users"' in response.text
+    assert 'name="username"' not in response.text
+
+
+def test_create_page_shows_creation_form(client):
+    response = client.get("/create")
+    assert response.status_code == 200
     assert 'name="username"' in response.text
+
+
+def test_create_link_reachable_from_users_page(client):
+    response = client.get("/users")
+    assert response.status_code == 200
+    assert 'href="/create"' in response.text
 
 
 def test_create_user_redirects_and_persists(client):
@@ -278,7 +292,7 @@ def test_photo_upload_rejects_unsupported_extension(client):
 
 def test_create_user_with_section_entries_activates_and_populates(client):
     response = client.post(
-        "/",
+        "/create",
         data={
             "username": "jdupont",
             "email": "jdupont@example.com",
@@ -312,7 +326,7 @@ def test_create_user_with_section_entries_activates_and_populates(client):
 
 def test_create_user_with_ticked_section_and_blank_entry_activates_with_no_items(client):
     response = client.post(
-        "/",
+        "/create",
         data={
             "username": "jdupont",
             "email": "jdupont@example.com",
@@ -332,7 +346,7 @@ def test_create_user_with_ticked_section_and_blank_entry_activates_with_no_items
 
 def test_create_user_with_partial_experience_fields_is_rejected(client):
     response = client.post(
-        "/",
+        "/create",
         data={
             "username": "jdupont",
             "email": "jdupont@example.com",
@@ -348,7 +362,7 @@ def test_create_user_with_partial_experience_fields_is_rejected(client):
 
 def test_create_user_with_partial_education_fields_is_rejected(client):
     response = client.post(
-        "/",
+        "/create",
         data={
             "username": "jdupont",
             "email": "jdupont@example.com",
@@ -364,7 +378,7 @@ def test_create_user_with_partial_education_fields_is_rejected(client):
 
 def test_create_user_with_photo_activates_photo_section(client):
     response = client.post(
-        "/",
+        "/create",
         data={
             "username": "jdupont",
             "email": "jdupont@example.com",
