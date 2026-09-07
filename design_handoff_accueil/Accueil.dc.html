@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/broadsheet-d619df1d-823f-4dea-8c4c-e961498c4799/styles.css">
+<script src="_ds/broadsheet-d619df1d-823f-4dea-8c4c-e961498c4799/_ds_bundle.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root { --font-heading: "Instrument Serif", Georgia, serif; --font-heading-weight: 400; --font-body: "Instrument Sans", system-ui, sans-serif; }
+body { margin: 0; text-wrap: pretty; background: var(--color-bg); font-family: var(--font-body); }
+.nav, .nav-brand, .btn, .tag { font-family: var(--font-body); }
+.nav-brand { letter-spacing: -0.01em; }
+a { color: var(--color-accent-700); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+a:hover { color: var(--color-accent-2); }
+</style>
+</helmet>
+
+<div style="min-height: 100vh; display: flex; flex-direction: column; background: var(--color-bg); color: var(--color-text); font-family: var(--font-body);">
+
+  <nav class="nav" style="padding-inline: clamp(20px, 5vw, 80px);">
+    <span class="nav-brand">Portfolio Maker</span>
+    <a href="#accueil" aria-current="location">Accueil</a>
+    <a href="#creer">Créer</a>
+    <a href="#portfolios">Tous les portfolios</a>
+  </nav>
+
+  <main id="accueil" style="flex: 1; width: 100%; max-width: 1280px; margin: 0 auto; box-sizing: border-box; padding: clamp(48px, 8vh, 96px) clamp(20px, 5vw, 80px) 64px; display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: clamp(40px, 6vw, 80px); align-items: start;">
+
+    <div>
+      <span style="display: block; font-size: 12px; line-height: 14px; letter-spacing: 0.12em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 70%, transparent);">Au sommaire</span>
+      <h1 style="font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: clamp(42px, 5.4vw, 68px); line-height: 1.04; letter-spacing: -0.02em; margin: 28px 0 0; max-width: 20ch;">Un CV en ligne, généré depuis un formulaire.</h1>
+      <p style="font-size: 16px; line-height: 27px; margin: 32px 0 0; max-width: 36ch; color: color-mix(in srgb, var(--color-text) 78%, transparent);">Pas de compte, pas de mot de passe. Vos informations, les sections dont vous avez besoin, une page publique — modifiable à tout moment.</p>
+    </div>
+
+    <div style="padding-top: clamp(0px, 3vw, 44px);">
+
+      <div style="display: flex; align-items: baseline; gap: 16px;">
+        <a href="#creer" style="font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: clamp(30px, 3.4vw, 44px); line-height: 1.15; letter-spacing: -0.015em; color: var(--color-text); text-decoration: none;" style-hover="color: var(--color-accent-700);">Créer un portfolio</a>
+        <span style="flex: 1; min-width: 32px; align-self: flex-end; margin-bottom: 0.42em; border-bottom: 1px dotted color-mix(in srgb, var(--color-text) 45%, transparent);"></span>
+        <span aria-hidden="true" style="font-size: 22px; line-height: 1; color: var(--color-accent-700);">→</span>
+      </div>
+      <p style="font-size: 15.5px; line-height: 27px; margin: 14px 0 0; max-width: 46ch; color: color-mix(in srgb, var(--color-text) 78%, transparent);">Nom, contact, bio — puis les sections Compétences, Formation, Expérience et Photo, ajoutées à la demande.</p>
+
+      <div style="display: flex; align-items: baseline; gap: 16px; margin-top: clamp(48px, 7vh, 84px);">
+        <a href="#portfolios" style="font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: clamp(30px, 3.4vw, 44px); line-height: 1.15; letter-spacing: -0.015em; color: var(--color-text); text-decoration: none;" style-hover="color: var(--color-accent-700);">Voir les portfolios</a>
+        <span style="flex: 1; min-width: 32px; align-self: flex-end; margin-bottom: 0.42em; border-bottom: 1px dotted color-mix(in srgb, var(--color-text) 45%, transparent);"></span>
+        <span aria-hidden="true" style="font-size: 22px; line-height: 1; color: var(--color-accent-700);">→</span>
+      </div>
+      <p style="font-size: 15.5px; line-height: 27px; margin: 14px 0 0; max-width: 46ch; color: color-mix(in srgb, var(--color-text) 78%, transparent);">La liste des portfolios déjà créés : consultez-en un, ou revenez modifier le vôtre.</p>
+
+      <div style="display: flex; flex-wrap: wrap; gap: 16px; margin-top: clamp(44px, 6vh, 72px);">
+        <a href="#creer" class="btn btn-primary" style="min-height: 44px; white-space: nowrap; flex: 0 0 auto;">Créer un portfolio</a>
+        <a href="#portfolios" class="btn btn-ghost" style="min-height: 44px; white-space: nowrap; flex: 0 0 auto;">Voir les portfolios</a>
+      </div>
+
+    </div>
+  </main>
+
+  <footer style="width: 100%; max-width: 1280px; margin: 0 auto; box-sizing: border-box; padding: 0 clamp(20px, 5vw, 80px) 40px; font-size: 13px; line-height: 24px; color: color-mix(in srgb, var(--color-text) 70%, transparent);">Portfolio Maker — projet FastAPI</footer>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:860}}"></script>
+</body>
+</html>

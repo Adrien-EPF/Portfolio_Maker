@@ -44,6 +44,48 @@ def test_home_page_shows_two_choices(client):
     assert 'name="username"' not in response.text
 
 
+def test_home_page_shows_accueil_copy(client):
+    response = client.get("/")
+    assert response.status_code == 200
+    text = response.text
+    assert "Au sommaire" in text
+    assert "Un CV en ligne, généré depuis un formulaire." in text
+    assert (
+        "Pas de compte, pas de mot de passe. Vos informations, les sections dont "
+        "vous avez besoin, une page publique — modifiable à tout moment." in text
+    )
+    assert '<a class="home-entry-link" href="/create">Créer un portfolio</a>' in text
+    assert (
+        "Nom, contact, bio — puis les sections Compétences, Formation, "
+        "Expérience et Photo, ajoutées à la demande." in text
+    )
+    assert '<a class="home-entry-link" href="/users">Voir les portfolios</a>' in text
+    assert (
+        "La liste des portfolios déjà créés : consultez-en un, ou revenez "
+        "modifier le vôtre." in text
+    )
+    assert '<a href="/create" class="btn btn-primary">Créer un portfolio</a>' in text
+    assert '<a href="/users" class="btn btn-ghost">Voir les portfolios</a>' in text
+
+
+def test_home_page_decorative_elements_are_aria_hidden(client):
+    response = client.get("/")
+    assert response.text.count('<span class="home-leader" aria-hidden="true">') == 2
+    assert response.text.count('<span class="home-arrow" aria-hidden="true">') == 2
+
+
+def test_base_page_loads_instrument_fonts_and_accueil_stylesheet(client):
+    response = client.get("/")
+    text = response.text
+    assert "Instrument+Sans" in text
+    assert "Instrument+Serif" in text
+    assert "family=Inter" not in text
+    assert '<link rel="stylesheet" href="/static/style.css" />' in text
+    style_index = text.index('href="/static/style.css"')
+    accueil_index = text.index('href="/static/accueil.css"')
+    assert style_index < accueil_index
+
+
 def test_create_page_shows_creation_form(client):
     response = client.get("/create")
     assert response.status_code == 200

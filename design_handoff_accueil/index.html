@@ -2,6 +2,10 @@
 {% block title %}Accueil{% endblock %}
 {% block header %}Portfolio Maker{% endblock %}
 
+{# The design's own header/nav differs from base.html: see README §"Deux options
+   d'intégration". This template assumes option B (base.html gains the .home-nav
+   markup) — with option A, keep base.html as-is and only the <main> content below. #}
+
 {% block content %}
 <div class="home">
   <div class="home-lede">
