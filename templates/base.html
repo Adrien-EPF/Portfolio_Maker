@@ -12,16 +12,12 @@
 </head>
 
 <body>
-    <header class="site-header">
-        <div class="container">
-            <h1>{% block header %}{% endblock %}</h1>
-            <nav>
-                <a href="/">Accueil</a>
-                <a href="/create">Créer un portfolio</a>
-                <a href="/users">Voir tous les portfolios</a>
-            </nav>
-        </div>
-    </header>
+    <nav class="home-nav">
+        <span class="brand">Portfolio Maker</span>
+        <a href="/"{% if request.url.path == "/" %} aria-current="page"{% endif %}>Accueil</a>
+        <a href="/create"{% if request.url.path == "/create" %} aria-current="page"{% endif %}>Créer</a>
+        <a href="/users"{% if request.url.path == "/users" %} aria-current="page"{% endif %}>Tous les portfolios</a>
+    </nav>
     <main class="container">
         {% block content %}{% endblock %}
     </main>

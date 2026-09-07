@@ -44,6 +44,27 @@ def test_home_page_shows_two_choices(client):
     assert 'name="username"' not in response.text
 
 
+def test_nav_chrome_is_consistent_across_pages(client):
+    user_id = create_user(client)
+    for path in ["/", "/create", "/users", f"/portfolio/{user_id}"]:
+        response = client.get(path)
+        assert response.status_code == 200
+        text = response.text
+        assert '<nav class="home-nav">' in text
+        assert '<span class="brand">Portfolio Maker</span>' in text
+        assert 'href="/"' in text
+        assert 'href="/create"' in text
+        assert 'href="/users"' in text
+        assert '<footer class="site-footer">' in text
+        assert "Portfolio Maker — Projet FastAPI" in text
+
+
+def test_nav_marks_current_page_with_aria_current(client):
+    for path, label in [("/", "Accueil"), ("/create", "Créer"), ("/users", "Tous les portfolios")]:
+        text = client.get(path).text
+        assert f'aria-current="page">{label}</a>' in text
+
+
 def test_home_page_shows_accueil_copy(client):
     response = client.get("/")
     assert response.status_code == 200
