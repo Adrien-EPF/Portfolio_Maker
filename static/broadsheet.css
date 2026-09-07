@@ -1,0 +1,183 @@
+/* ===========================================================================
+   Broadsheet — accueil, création, liste. À charger APRÈS static/style.css :
+   <link rel="stylesheet" href="/static/broadsheet.css" />
+   Polices : voir base.html (Instrument Serif + Instrument Sans, en remplacement
+   du <link> Inter).
+   Règle n°1 du design system : aucune carte, aucune bordure, aucun filet — la
+   hiérarchie vient de l'échelle typographique et du blanc.
+   =========================================================================== */
+
+:root {
+  --color-bg: #f3f2f2;
+  --color-surface: #eae9e9;
+  --color-text: #201e1d;
+  --color-accent: #0088b0;            /* cyan — l'interactif */
+  --color-accent-600: #1186ac;        /* hover */
+  --color-accent-700: #006786;        /* pressé + texte accent < 24px */
+  --color-accent-2: #d6006c;          /* magenta — second spot */
+  --color-accent-2-700: #aa0b56;      /* destructif (texte) */
+  --color-divider: color-mix(in srgb, #201e1d 16%, transparent);
+
+  --font-heading: "Instrument Serif", Georgia, serif;
+  --font-heading-weight: 400;
+  --font-body: "Instrument Sans", system-ui, sans-serif;
+
+  --space-2: 10px; --space-3: 15px; --space-4: 20px; --space-6: 30px;
+  --radius-md: 2px;
+
+  --ink-78: color-mix(in srgb, var(--color-text) 78%, transparent);
+  --ink-70: color-mix(in srgb, var(--color-text) 70%, transparent);
+  --ink-60: color-mix(in srgb, var(--color-text) 60%, transparent);
+  --ink-45: color-mix(in srgb, var(--color-text) 45%, transparent);
+
+  --gutter: clamp(20px, 5vw, 80px);
+  --shell: 1280px;
+}
+
+body {
+  margin: 0; background: var(--color-bg); color: var(--color-text);
+  font-family: var(--font-body); text-wrap: pretty;
+  min-height: 100vh; display: flex; flex-direction: column;
+}
+main { flex: 1; }
+h1, h2, h3, legend { font-family: var(--font-heading); font-weight: var(--font-heading-weight); }
+a { color: var(--color-accent-700); text-underline-offset: 3px; text-decoration-thickness: 1px; }
+a:hover { color: var(--color-accent-2); }
+:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+::selection { background: color-mix(in srgb, var(--color-accent) 30%, transparent); }
+
+/* — chrome — */
+.site-nav {
+  display: flex; align-items: center; gap: var(--space-4);
+  padding: var(--space-3) var(--gutter); border-bottom: none;
+}
+.site-nav .brand {
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  font-size: 18px; letter-spacing: -0.01em; margin-right: auto;
+}
+.site-nav a { color: inherit; text-decoration: none; font-size: 14px; }
+.site-nav a:hover, .site-nav a[aria-current="page"] { color: var(--color-accent); }
+
+.site-footer {
+  width: 100%; max-width: var(--shell); margin: 0 auto; box-sizing: border-box;
+  padding: 0 var(--gutter) 40px; font-size: 13px; line-height: 24px; color: var(--ink-70);
+}
+
+/* — coquille de page : colonne de gauche fixe, contenu à droite — */
+.page {
+  width: 100%; max-width: var(--shell); margin: 0 auto; box-sizing: border-box;
+  padding: clamp(40px, 6vh, 72px) var(--gutter) 72px;
+}
+.page-split {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: clamp(36px, 5vw, 80px); align-items: start;
+}
+/* l'accueil respire un peu plus */
+.page-split .index-col { padding-top: clamp(0px, 3vw, 44px); }
+.lede-sticky { position: sticky; top: 40px; }
+
+.kicker {
+  display: block; font-size: 12px; line-height: 14px;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-70);
+}
+.lede-title {
+  font-size: clamp(38px, 5vw, 68px); line-height: 1.04; letter-spacing: -0.02em;
+  margin: 24px 0 0; max-width: 20ch;
+}
+.lede-sub { font-size: 16px; line-height: 27px; margin: 28px 0 0; max-width: 34ch; color: var(--ink-78); }
+.lede-link { font-size: 15px; line-height: 27px; margin: 24px 0 0; max-width: 34ch; }
+.lede-cta { margin: 32px 0 0; }
+
+/* — entrée de sommaire : titre + points de conduite + flèche — */
+.entry { display: flex; align-items: baseline; gap: var(--space-4); }
+.entry-next { margin-top: clamp(48px, 7vh, 84px); }
+.entry-link {
+  font-family: var(--font-heading); font-weight: var(--font-heading-weight);
+  font-size: clamp(30px, 3.4vw, 44px); line-height: 1.15; letter-spacing: -0.015em;
+  color: var(--color-text); text-decoration: none;
+}
+.entry-link-sm { font-size: clamp(26px, 2.8vw, 36px); }
+.entry-link:hover { color: var(--color-accent-700); }
+.leader {
+  flex: 1; min-width: 32px; align-self: flex-end; margin-bottom: 0.42em;
+  border-bottom: 1px dotted var(--ink-45);
+}
+.entry-arrow { font-size: 22px; line-height: 1; color: var(--color-accent-700); }
+.entry-link:hover ~ .entry-arrow { color: var(--color-accent); }
+.note { font-size: 15.5px; line-height: 27px; margin: 14px 0 0; max-width: 46ch; color: var(--ink-78); }
+
+.actions-row { display: flex; flex-wrap: wrap; gap: var(--space-4); margin-top: clamp(44px, 6vh, 72px); }
+.actions-row form { margin: 0; }
+
+/* — formulaire (page /create) — */
+.form { display: flex; flex-direction: column; gap: clamp(40px, 5vh, 64px); max-width: 620px; }
+.form fieldset {
+  border: 0; padding: 0; margin: 0;
+  display: flex; flex-direction: column; gap: var(--space-4);
+}
+.form .fieldset-sections { gap: 36px; }
+.form legend {
+  display: block; float: none; padding: 0; margin: 0 0 4px;   /* pas de float : il chevauche le texte suivant */
+  font-size: 28px; line-height: 1.2; letter-spacing: -0.015em;
+}
+.form .hint { font-size: 15px; line-height: 26px; margin: 0; color: var(--ink-70); }
+.form .hint-wide { max-width: 52ch; color: var(--ink-78); }
+
+.field { display: flex; flex-direction: column; gap: 8px; }
+.field label {
+  font-family: var(--font-body); font-size: 12px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--ink-70);
+}
+.field .required { color: var(--color-accent-2); }
+.field-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--space-4); }
+
+.input {
+  width: 100%; box-sizing: border-box; min-height: 44px;
+  font-family: var(--font-body); font-size: 15px; color: var(--color-text);
+  caret-color: var(--color-accent); background: var(--color-surface);
+  border: 1px solid var(--color-divider); border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+}
+textarea.input { line-height: 26px; resize: vertical; }
+.input::placeholder { color: var(--ink-60); opacity: 1; }
+.input:hover { border-color: color-mix(in srgb, var(--color-text) 28%, transparent); }
+.input:focus-visible { border-color: var(--color-accent); }
+.input-file { font-size: 15px; padding: var(--space-2) 0; }
+input[type="checkbox"] { accent-color: var(--color-accent); width: 18px; height: 18px; }
+
+.section-toggle { display: flex; flex-direction: column; gap: var(--space-4); }
+.toggle {
+  display: flex; align-items: center; gap: 12px; cursor: pointer;
+  font-family: var(--font-heading); font-size: 22px; letter-spacing: -0.01em;
+}
+
+/* — liste (page /users) — */
+.listing { display: flex; flex-direction: column; gap: 44px; }
+.listing-meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-4); margin-top: 12px; }
+.listing-username { font-size: 14px; color: var(--ink-70); white-space: nowrap; }
+.listing-email { font-size: 15px; line-height: 26px; color: var(--ink-78); }
+.listing-sections { font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-60); }
+.listing-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: var(--space-4); }
+.listing-actions form { margin: 0; }
+.listing-actions .btn { min-height: 40px; }
+.empty-state { font-size: 16px; line-height: 27px; color: var(--ink-78); }
+
+/* — boutons — */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  cursor: pointer; text-decoration: none;
+  font-family: var(--font-body); font-weight: 500; font-size: 14px; line-height: 1.2;
+  color: var(--color-text); background: transparent;
+  border: 1px solid transparent; border-radius: var(--radius-md);
+  padding: var(--space-2) 18px; min-height: 44px; box-sizing: border-box;
+  white-space: nowrap; flex: 0 0 auto;      /* sinon les libellés français cassent sur 2 lignes */
+}
+.btn-primary { background: var(--color-accent); color: var(--color-bg); }
+.btn-primary:hover { background: var(--color-accent-600); }
+.btn-primary:active { background: var(--color-accent-700); }
+.btn-secondary { border-color: var(--color-divider); }
+.btn-secondary:hover { background: color-mix(in srgb, var(--color-text) 7%, transparent); }
+.btn-ghost { color: var(--color-accent-700); }
+.btn-ghost:hover { background: color-mix(in srgb, var(--color-accent) 10%, transparent); }
+.btn-danger { color: var(--color-accent-2-700); }
+.btn-danger:hover { background: color-mix(in srgb, var(--color-accent-2) 10%, transparent); }

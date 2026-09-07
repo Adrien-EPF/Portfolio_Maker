@@ -50,7 +50,7 @@ def test_nav_chrome_is_consistent_across_pages(client):
         response = client.get(path)
         assert response.status_code == 200
         text = response.text
-        assert '<nav class="home-nav">' in text
+        assert '<nav class="site-nav">' in text
         assert '<span class="brand">Portfolio Maker</span>' in text
         assert 'href="/"' in text
         assert 'href="/create"' in text
@@ -75,12 +75,12 @@ def test_home_page_shows_accueil_copy(client):
         "Pas de compte, pas de mot de passe. Vos informations, les sections dont "
         "vous avez besoin, une page publique — modifiable à tout moment." in text
     )
-    assert '<a class="home-entry-link" href="/create">Créer un portfolio</a>' in text
+    assert '<a class="entry-link" href="/create">Créer un portfolio</a>' in text
     assert (
         "Nom, contact, bio — puis les sections Compétences, Formation, "
         "Expérience et Photo, ajoutées à la demande." in text
     )
-    assert '<a class="home-entry-link" href="/users">Voir les portfolios</a>' in text
+    assert '<a class="entry-link" href="/users">Voir les portfolios</a>' in text
     assert (
         "La liste des portfolios déjà créés : consultez-en un, ou revenez "
         "modifier le vôtre." in text
@@ -91,11 +91,11 @@ def test_home_page_shows_accueil_copy(client):
 
 def test_home_page_decorative_elements_are_aria_hidden(client):
     response = client.get("/")
-    assert response.text.count('<span class="home-leader" aria-hidden="true">') == 2
-    assert response.text.count('<span class="home-arrow" aria-hidden="true">') == 2
+    assert response.text.count('<span class="leader" aria-hidden="true">') == 2
+    assert response.text.count('<span class="entry-arrow" aria-hidden="true">') == 2
 
 
-def test_base_page_loads_instrument_fonts_and_accueil_stylesheet(client):
+def test_base_page_loads_instrument_fonts_and_broadsheet_stylesheet(client):
     response = client.get("/")
     text = response.text
     assert "Instrument+Sans" in text
@@ -103,8 +103,8 @@ def test_base_page_loads_instrument_fonts_and_accueil_stylesheet(client):
     assert "family=Inter" not in text
     assert '<link rel="stylesheet" href="/static/style.css" />' in text
     style_index = text.index('href="/static/style.css"')
-    accueil_index = text.index('href="/static/accueil.css"')
-    assert style_index < accueil_index
+    broadsheet_index = text.index('href="/static/broadsheet.css"')
+    assert style_index < broadsheet_index
 
 
 def test_create_page_shows_creation_form(client):
@@ -117,6 +117,14 @@ def test_create_link_reachable_from_users_page(client):
     response = client.get("/users")
     assert response.status_code == 200
     assert 'href="/create"' in response.text
+
+
+def test_create_and_users_pages_use_broadsheet_markup_not_legacy_cards(client):
+    for path in ["/create", "/users"]:
+        text = client.get(path).text
+        assert 'class="card"' not in text
+        assert "directory-grid" not in text
+        assert "directory-card" not in text
 
 
 def test_create_user_redirects_and_persists(client):
@@ -147,7 +155,7 @@ def test_portfolio_not_found_returns_404(client):
 def test_users_page_shows_empty_state_when_no_users(client):
     response = client.get("/users")
     assert response.status_code == 200
-    assert "Aucun portfolio créé" in response.text
+    assert "Aucun portfolio pour l'instant" in response.text
 
 
 def test_users_page_lists_created_users(client):

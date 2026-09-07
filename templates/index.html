@@ -1,30 +1,31 @@
 {% extends "base.html" %}
 {% block title %}Accueil{% endblock %}
+{% set page = 'home' %}
 
 {% block content %}
-<div class="home">
-  <div class="home-lede">
-    <span class="home-kicker">Au sommaire</span>
-    <h1 class="home-title">Un CV en ligne, généré depuis un formulaire.</h1>
-    <p class="home-sub">Pas de compte, pas de mot de passe. Vos informations, les sections dont vous avez besoin, une page publique — modifiable à tout moment.</p>
+<div class="page page-split">
+  <div class="lede">
+    <span class="kicker">Au sommaire</span>
+    <h1 class="lede-title">Un CV en ligne, généré depuis un formulaire.</h1>
+    <p class="lede-sub">Pas de compte, pas de mot de passe. Vos informations, les sections dont vous avez besoin, une page publique — modifiable à tout moment.</p>
   </div>
 
-  <div class="home-index">
-    <div class="home-entry">
-      <a class="home-entry-link" href="/create">Créer un portfolio</a>
-      <span class="home-leader" aria-hidden="true"></span>
-      <span class="home-arrow" aria-hidden="true">&rarr;</span>
+  <div class="index-col">
+    <div class="entry">
+      <a class="entry-link" href="/create">Créer un portfolio</a>
+      <span class="leader" aria-hidden="true"></span>
+      <span class="entry-arrow" aria-hidden="true">&rarr;</span>
     </div>
-    <p class="home-note">Nom, contact, bio — puis les sections Compétences, Formation, Expérience et Photo, ajoutées à la demande.</p>
+    <p class="note">Nom, contact, bio — puis les sections Compétences, Formation, Expérience et Photo, ajoutées à la demande.</p>
 
-    <div class="home-entry home-entry-second">
-      <a class="home-entry-link" href="/users">Voir les portfolios</a>
-      <span class="home-leader" aria-hidden="true"></span>
-      <span class="home-arrow" aria-hidden="true">&rarr;</span>
+    <div class="entry entry-next">
+      <a class="entry-link" href="/users">Voir les portfolios</a>
+      <span class="leader" aria-hidden="true"></span>
+      <span class="entry-arrow" aria-hidden="true">&rarr;</span>
     </div>
-    <p class="home-note">La liste des portfolios déjà créés : consultez-en un, ou revenez modifier le vôtre.</p>
+    <p class="note">La liste des portfolios déjà créés : consultez-en un, ou revenez modifier le vôtre.</p>
 
-    <div class="home-actions">
+    <div class="actions-row">
       <a href="/create" class="btn btn-primary">Créer un portfolio</a>
       <a href="/users" class="btn btn-ghost">Voir les portfolios</a>
     </div>

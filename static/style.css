@@ -37,58 +37,14 @@ a {
   padding: 0 20px;
 }
 
-/* Header */
-
-header.site-header {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(8px);
-  border-bottom: 1px solid var(--color-border);
-}
-
-.site-header .container {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding-top: 16px;
-  padding-bottom: 16px;
-}
-
-.site-header h1 {
-  font-size: 1.25rem;
-  margin: 0;
-  letter-spacing: -0.01em;
-}
-
-.site-header nav {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.site-header nav a {
-  text-decoration: none;
-  color: var(--color-text);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  padding: 8px 14px;
-  border-radius: 999px;
-  font-size: 0.9rem;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, color 0.15s ease, border-color 0.15s ease;
-}
-
-.site-header nav a:hover {
-  color: var(--color-primary-dark);
-  border-color: var(--color-primary);
-  box-shadow: var(--shadow-sm);
-  transform: translateY(-1px);
-}
-
 /* Main / animation */
+
+.page-title {
+  font-size: clamp(26px, 3.4vw, 34px);
+  line-height: 1.15;
+  letter-spacing: -0.015em;
+  margin: 40px 0 24px;
+}
 
 main {
   padding: 32px 0 64px;
@@ -119,10 +75,8 @@ main.container > *:nth-child(3) {
 
 @media (prefers-reduced-motion: reduce) {
   main.container > *,
-  .site-header nav a,
   .btn,
-  .card,
-  .directory-card {
+  .card {
     animation: none !important;
     transition: none !important;
   }
@@ -179,7 +133,7 @@ legend {
   letter-spacing: 0.04em;
 }
 
-form .field {
+form:not(.form) .field {
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -196,11 +150,11 @@ label .required {
   margin-left: 2px;
 }
 
-input[type="text"],
-input[type="email"],
-input[type="tel"],
-select,
-textarea {
+input[type="text"]:not(.input),
+input[type="email"]:not(.input),
+input[type="tel"]:not(.input),
+select:not(.input),
+textarea:not(.input) {
   font-family: inherit;
   font-size: 1rem;
   padding: 10px 12px;
@@ -211,16 +165,16 @@ textarea {
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-input:focus,
-select:focus,
-textarea:focus {
+input:focus:not(.input),
+select:focus:not(.input),
+textarea:focus:not(.input) {
   outline: none;
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18);
 }
 
-input:required,
-select:required {
+input:required:not(.input),
+select:required:not(.input) {
   border-left: 3px solid var(--color-primary);
 }
 
@@ -467,39 +421,6 @@ textarea {
   gap: 14px;
 }
 
-/* Creation-form section toggles */
-
-.section-hint {
-  color: var(--color-text-muted);
-  font-size: 0.88rem;
-  margin-top: 0;
-}
-
-.section-toggle {
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: 14px 16px;
-  margin-bottom: 14px;
-  background: var(--color-bg);
-}
-
-.section-toggle:last-child {
-  margin-bottom: 0;
-}
-
-.checkbox-field {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 600;
-  margin-bottom: 12px;
-}
-
-.checkbox-field input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-}
-
 .inline-fields .field {
   flex: 1 1 200px;
 }
@@ -519,55 +440,6 @@ textarea {
   border-radius: var(--radius-md);
   padding: 8px 12px;
   font-size: 0.9rem;
-}
-
-/* Directory grid (users.html) */
-
-.directory-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 18px;
-}
-
-.directory-card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-  padding: 18px;
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
-}
-
-.directory-card:hover {
-  box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
-}
-
-.directory-card h3 {
-  margin: 0 0 4px;
-  font-size: 1.05rem;
-}
-
-.directory-card .username {
-  color: var(--color-text-muted);
-  font-size: 0.85rem;
-  margin: 0 0 2px;
-}
-
-.directory-card .email {
-  color: var(--color-text-muted);
-  font-size: 0.85rem;
-  margin: 0 0 14px;
-}
-
-.directory-card .actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.directory-card .actions form {
-  margin: 0;
 }
 
 /* Section controls */
@@ -671,11 +543,6 @@ textarea {
 /* Responsive */
 
 @media (max-width: 600px) {
-  .site-header .container {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
   .profile-hero {
     flex-direction: column;
     align-items: flex-start;

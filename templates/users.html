@@ -1,26 +1,43 @@
 {% extends "base.html" %}
 {% block title %}Tous les portfolios{% endblock %}
+{% set page = 'users' %}
 
 {% block content %}
-<h1 class="page-title">Tous les portfolios</h1>
-{% if users %}
-<div class="directory-grid">
-    {% for user in users %}
-    <div class="directory-card">
-        <h3>{{ user.firstname }} {{ user.name }}</h3>
-        <p class="username">@{{ user.username }}</p>
-        <p class="email">{{ user.email }}</p>
-        <div class="actions">
-            <a href="/portfolio/{{ user.id }}" class="btn btn-primary">Voir</a>
-            <form action="/users/{{ user.id }}/delete" method="post"
-                onsubmit="return confirm('Supprimer le portfolio de {{ user.firstname }} ?')">
-                <button type="submit" class="btn btn-danger-ghost">Supprimer</button>
-            </form>
+<div class="page page-split">
+  <div class="lede lede-sticky">
+    <span class="kicker">{{ users|length }} portfolio{{ 's' if users|length != 1 else '' }}</span>
+    <h1 class="lede-title">Tous les portfolios.</h1>
+    <p class="lede-sub">Ouvrez celui qui vous intéresse, ou retrouvez le vôtre pour le modifier. La suppression est définitive.</p>
+    <p class="lede-cta"><a href="/create" class="btn btn-primary">Créer un portfolio</a></p>
+  </div>
+
+  <div>
+    {% if users %}
+    <div class="listing">
+      {% for user in users %}
+      <div class="listing-item">
+        <div class="entry">
+          <a class="entry-link entry-link-sm" href="/portfolio/{{ user.id }}">{{ user.firstname }} {{ user.name }}</a>
+          <span class="leader" aria-hidden="true"></span>
+          <span class="listing-username">@{{ user.username }}</span>
         </div>
+        <div class="listing-meta">
+          <span class="listing-email">{{ user.email }}</span>
+          {% if user.active_sections %}<span class="listing-sections">{{ user.active_sections|join(' · ') }}</span>{% endif %}
+        </div>
+        <div class="listing-actions">
+          <a href="/portfolio/{{ user.id }}" class="btn btn-secondary">Voir</a>
+          <form action="/users/{{ user.id }}/delete" method="post"
+                onsubmit="return confirm('Supprimer le portfolio de {{ user.firstname }} ?')">
+            <button type="submit" class="btn btn-ghost btn-danger">Supprimer</button>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
     </div>
-    {% endfor %}
+    {% else %}
+    <p class="empty-state">Aucun portfolio pour l'instant. <a href="/create">Créer le premier &rarr;</a></p>
+    {% endif %}
+  </div>
 </div>
-{% else %}
-<div class="empty-state">Aucun portfolio créé pour l'instant. <a href="/">Créer le premier !</a></div>
-{% endif %}
 {% endblock %}
