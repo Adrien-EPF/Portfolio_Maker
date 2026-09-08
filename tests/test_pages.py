@@ -592,6 +592,170 @@ def test_create_user_with_photo_activates_photo_section(client):
     assert "Retirer la section Photo" in page.text
 
 
+# Multiple Skill/Experience/Education rows at creation time
+#
+# Repeated form keys are posted as dict values that are lists (e.g.
+# skill_name=["Python", "Rust"]) — httpx form-encodes a Mapping's list
+# values as repeated keys in order (doseq), which is what FastAPI's
+# `list[str] = Form()` parameters expect.
+
+
+def _base_profile(**overrides):
+    data = {
+        "username": "jdupont",
+        "email": "jdupont@example.com",
+        "name": "Dupont",
+        "firstname": "Jean",
+        "phone": "0600000000",
+    }
+    data.update(overrides)
+    return data
+
+
+def test_create_user_with_multiple_skill_rows_saves_all(client):
+    response = client.post(
+        "/create",
+        data=_base_profile(
+            activate_skills="on",
+            skill_name=["Python", "Rust"],
+            skill_level=["Expert", "Débutant"],
+        ),
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    user_id = int(response.headers["location"].rsplit("/", 1)[-1])
+    page = client.get(f"/portfolio/{user_id}/edit")
+    assert "Python" in page.text
+    assert "Rust" in page.text
+    assert page.text.index("Python") < page.text.index("Rust")
+
+
+def test_create_user_with_multiple_experience_rows_saves_all(client):
+    response = client.post(
+        "/create",
+        data=_base_profile(
+            activate_experience="on",
+            exp_title=["Développeur", "Consultant"],
+            exp_company=["Acme", "Beta"],
+            exp_start_date=["2020", "2022"],
+            exp_end_date=["", ""],
+            exp_description=["", ""],
+        ),
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    user_id = int(response.headers["location"].rsplit("/", 1)[-1])
+    page = client.get(f"/portfolio/{user_id}")
+    assert "Développeur" in page.text and "Acme" in page.text
+    assert "Consultant" in page.text and "Beta" in page.text
+    assert page.text.index("Développeur") < page.text.index("Consultant")
+
+
+def test_create_user_with_multiple_education_rows_saves_all(client):
+    response = client.post(
+        "/create",
+        data=_base_profile(
+            activate_education="on",
+            edu_degree=["Licence Informatique", "Master Informatique"],
+            edu_school=["Université de Montpellier", "Université de Montpellier"],
+            edu_start_date=["2020", "2023"],
+            edu_end_date=["2023", ""],
+            edu_description=["", ""],
+        ),
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    user_id = int(response.headers["location"].rsplit("/", 1)[-1])
+    page = client.get(f"/portfolio/{user_id}")
+    assert "Licence Informatique" in page.text
+    assert "Master Informatique" in page.text
+    assert page.text.index("Licence Informatique") < page.text.index("Master Informatique")
+
+
+def test_create_user_with_blank_extra_skill_row_is_dropped_silently(client):
+    response = client.post(
+        "/create",
+        data=_base_profile(
+            activate_skills="on",
+            skill_name=["Python", ""],
+            skill_level=["Expert", ""],
+        ),
+        follow_redirects=False,
+    )
+    assert response.status_code == 303
+    user_id = int(response.headers["location"].rsplit("/", 1)[-1])
+    page = client.get(f"/portfolio/{user_id}/edit")
+    assert "Python" in page.text
+    assert page.text.count('class="skill-pill"') == 1
+
+
+def test_create_user_with_partial_second_experience_row_is_rejected(client):
+    response = client.post(
+        "/create",
+        data=_base_profile(
+            activate_experience="on",
+            exp_title=["Développeur", "Consultant"],
+            exp_company=["Acme", ""],
+            exp_start_date=["2020", ""],
+            exp_end_date=["", ""],
+            exp_description=["", ""],
+        ),
+    )
+    assert response.status_code == 400
+
+
+def test_create_user_with_partial_second_education_row_is_rejected(client):
+    response = client.post(
+        "/create",
+        data=_base_profile(
+            activate_education="on",
+            edu_degree=["Master Informatique", "Licence"],
+            edu_school=["Université de Montpellier", ""],
+            edu_start_date=["2023", ""],
+            edu_end_date=["", ""],
+            edu_description=["", ""],
+        ),
+    )
+    assert response.status_code == 400
+
+
+def test_add_row_reloads_create_page_with_extra_blank_row_and_preserves_typed_values(client):
+    response = client.post(
+        "/create",
+        data=_base_profile(
+            activate_skills="on",
+            skill_name=["Python"],
+            skill_level=["Expert"],
+            add_row="skills",
+        ),
+    )
+    assert response.status_code == 200
+    text = response.text
+    assert 'value="jdupont"' in text
+    assert 'value="Python"' in text
+    assert text.count('name="skill_name"') == 2
+
+
+def test_add_row_for_one_section_leaves_other_sections_row_count_unchanged(client):
+    response = client.post(
+        "/create",
+        data=_base_profile(
+            activate_experience="on",
+            exp_title=["Développeur"],
+            exp_company=["Acme"],
+            exp_start_date=["2020"],
+            exp_end_date=[""],
+            exp_description=[""],
+            add_row="skills",
+        ),
+    )
+    assert response.status_code == 200
+    text = response.text
+    assert text.count('name="skill_name"') == 2
+    assert text.count('name="exp_title"') == 1
+    assert 'value="Développeur"' in text
+
+
 # Profile editing
 
 

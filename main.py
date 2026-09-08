@@ -1,4 +1,6 @@
+import itertools
 import os
+from dataclasses import dataclass
 from typing import Annotated
 from fastapi import FastAPI, Request, Form, HTTPException, File, UploadFile
 from fastapi.responses import RedirectResponse
@@ -22,6 +24,68 @@ SECTION_LABELS = {
     "education": "Formation",
     "photo": "Photo",
 }
+
+
+@dataclass
+class SkillRow:
+    name: str = ""
+    level: str = ""
+
+
+@dataclass
+class ExpRow:
+    title: str = ""
+    company: str = ""
+    start_date: str = ""
+    end_date: str = ""
+    description: str = ""
+
+
+@dataclass
+class EduRow:
+    degree: str = ""
+    school: str = ""
+    start_date: str = ""
+    end_date: str = ""
+    description: str = ""
+
+
+def _skill_rows(names: list[str], levels: list[str]) -> list[SkillRow]:
+    rows = [
+        SkillRow(name=n, level=l)
+        for n, l in itertools.zip_longest(names, levels, fillvalue="")
+    ]
+    return rows or [SkillRow()]
+
+
+def _exp_rows(titles, companies, starts, ends, descriptions) -> list[ExpRow]:
+    rows = [
+        ExpRow(title=t, company=c, start_date=s, end_date=e, description=d)
+        for t, c, s, e, d in itertools.zip_longest(
+            titles, companies, starts, ends, descriptions, fillvalue=""
+        )
+    ]
+    return rows or [ExpRow()]
+
+
+def _edu_rows(degrees, schools, starts, ends, descriptions) -> list[EduRow]:
+    rows = [
+        EduRow(degree=deg, school=sc, start_date=s, end_date=e, description=d)
+        for deg, sc, s, e, d in itertools.zip_longest(
+            degrees, schools, starts, ends, descriptions, fillvalue=""
+        )
+    ]
+    return rows or [EduRow()]
+
+
+def _validate_multi_rows(rows: list[tuple[str, str, str]], detail: str):
+    """A row is either fully blank (skipped at save time) or has all three
+    required fields — any-but-not-all rejects the whole submission, same
+    rule as the original single-row check, applied per row."""
+    for a, b, c in rows:
+        fields = (a.strip(), b.strip(), c.strip())
+        if any(fields) and not all(fields):
+            raise HTTPException(status_code=400, detail=detail)
 
 
 class User(SQLModel, table=True):
@@ -242,50 +306,82 @@ def show_home(request: Request):
 
 @app.get("/create")
 def show_create_form(request: Request):
-    return templates.TemplateResponse(request, "create.html", context={})
+    return templates.TemplateResponse(
+        request, "create.html",
+        context={
+            "username": "", "email": "", "name": "", "firstname": "", "phone": "",
+            "github": "", "bio": "",
+            "activate_skills": False, "activate_experience": False,
+            "activate_education": False, "activate_photo": False,
+            "skill_rows": [SkillRow()], "exp_rows": [ExpRow()], "edu_rows": [EduRow()],
+        },
+    )
 
 
 @app.post("/create")
 async def create_user(
     request: Request,
-    username: Annotated[str, Form()],
-    email: Annotated[str, Form()],
-    name: Annotated[str, Form()],
-    firstname: Annotated[str, Form()],
-    phone: Annotated[str, Form()],
+    username: Annotated[str, Form()] = "",
+    email: Annotated[str, Form()] = "",
+    name: Annotated[str, Form()] = "",
+    firstname: Annotated[str, Form()] = "",
+    phone: Annotated[str, Form()] = "",
     github: Annotated[str, Form()] = "",
     bio: Annotated[str, Form()] = "",
     activate_skills: Annotated[str | None, Form()] = None,
-    skill_name: Annotated[str, Form()] = "",
-    skill_level: Annotated[str, Form()] = "",
+    skill_name: Annotated[list[str], Form()] = [],
+    skill_level: Annotated[list[str], Form()] = [],
     activate_experience: Annotated[str | None, Form()] = None,
-    exp_title: Annotated[str, Form()] = "",
-    exp_company: Annotated[str, Form()] = "",
-    exp_start_date: Annotated[str, Form()] = "",
-    exp_end_date: Annotated[str, Form()] = "",
-    exp_description: Annotated[str, Form()] = "",
+    exp_title: Annotated[list[str], Form()] = [],
+    exp_company: Annotated[list[str], Form()] = [],
+    exp_start_date: Annotated[list[str], Form()] = [],
+    exp_end_date: Annotated[list[str], Form()] = [],
+    exp_description: Annotated[list[str], Form()] = [],
     activate_education: Annotated[str | None, Form()] = None,
-    edu_degree: Annotated[str, Form()] = "",
-    edu_school: Annotated[str, Form()] = "",
-    edu_start_date: Annotated[str, Form()] = "",
-    edu_end_date: Annotated[str, Form()] = "",
-    edu_description: Annotated[str, Form()] = "",
+    edu_degree: Annotated[list[str], Form()] = [],
+    edu_school: Annotated[list[str], Form()] = [],
+    edu_start_date: Annotated[list[str], Form()] = [],
+    edu_end_date: Annotated[list[str], Form()] = [],
+    edu_description: Annotated[list[str], Form()] = [],
     activate_photo: Annotated[str | None, Form()] = None,
     photo: Annotated[UploadFile | None, File()] = None,
+    add_row: Annotated[str | None, Form()] = None,
 ):
-    exp_fields = (exp_title.strip(), exp_company.strip(), exp_start_date.strip())
-    if activate_experience and any(exp_fields) and not all(exp_fields):
-        raise HTTPException(
-            status_code=400,
-            detail="Expérience incomplète : intitulé, entreprise et date de début sont requis ensemble",
+    skill_rows = _skill_rows(skill_name, skill_level)
+    exp_rows = _exp_rows(exp_title, exp_company, exp_start_date, exp_end_date, exp_description)
+    edu_rows = _edu_rows(edu_degree, edu_school, edu_start_date, edu_end_date, edu_description)
+
+    if add_row:
+        if add_row == "skills":
+            skill_rows.append(SkillRow())
+        elif add_row == "experience":
+            exp_rows.append(ExpRow())
+        elif add_row == "education":
+            edu_rows.append(EduRow())
+        else:
+            raise HTTPException(status_code=400, detail="Section inconnue")
+        return templates.TemplateResponse(
+            request, "create.html",
+            context={
+                "username": username, "email": email, "name": name, "firstname": firstname,
+                "phone": phone, "github": github, "bio": bio,
+                "activate_skills": bool(activate_skills), "activate_experience": bool(activate_experience),
+                "activate_education": bool(activate_education), "activate_photo": bool(activate_photo),
+                "skill_rows": skill_rows, "exp_rows": exp_rows, "edu_rows": edu_rows,
+            },
         )
 
-    edu_fields = (edu_degree.strip(), edu_school.strip(), edu_start_date.strip())
-    if activate_education and any(edu_fields) and not all(edu_fields):
-        raise HTTPException(
-            status_code=400,
-            detail="Formation incomplète : diplôme, établissement et date de début sont requis ensemble",
-        )
+    if not all(v.strip() for v in (username, email, name, firstname, phone)):
+        raise HTTPException(status_code=422, detail="Identité et contact requis")
+
+    _validate_multi_rows(
+        [(r.title, r.company, r.start_date) for r in exp_rows],
+        "Expérience incomplète : intitulé, entreprise et date de début sont requis ensemble",
+    )
+    _validate_multi_rows(
+        [(r.degree, r.school, r.start_date) for r in edu_rows],
+        "Formation incomplète : diplôme, établissement et date de début sont requis ensemble",
+    )
 
     photo_contents, photo_ext = None, None
     if activate_photo and photo is not None and photo.filename:
@@ -302,32 +398,41 @@ async def create_user(
 
         if activate_skills:
             ensure_section_active(session, user.id, "skills")
-            if skill_name.strip():
-                session.add(
-                    Skill(user_id=user.id, name=skill_name, level=skill_level or None, position=0)
-                )
+            position = 0
+            for row in skill_rows:
+                if row.name.strip():
+                    session.add(
+                        Skill(user_id=user.id, name=row.name, level=row.level or None, position=position)
+                    )
+                    position += 1
 
         if activate_experience:
             ensure_section_active(session, user.id, "experience")
-            if all(exp_fields):
-                session.add(
-                    Experience(
-                        user_id=user.id, title=exp_title, company=exp_company,
-                        start_date=exp_start_date, end_date=exp_end_date or None,
-                        description=exp_description or None, position=0,
+            position = 0
+            for row in exp_rows:
+                if row.title.strip() and row.company.strip() and row.start_date.strip():
+                    session.add(
+                        Experience(
+                            user_id=user.id, title=row.title, company=row.company,
+                            start_date=row.start_date, end_date=row.end_date or None,
+                            description=row.description or None, position=position,
+                        )
                     )
-                )
+                    position += 1
 
         if activate_education:
             ensure_section_active(session, user.id, "education")
-            if all(edu_fields):
-                session.add(
-                    Education(
-                        user_id=user.id, degree=edu_degree, school=edu_school,
-                        start_date=edu_start_date, end_date=edu_end_date or None,
-                        description=edu_description or None, position=0,
+            position = 0
+            for row in edu_rows:
+                if row.degree.strip() and row.school.strip() and row.start_date.strip():
+                    session.add(
+                        Education(
+                            user_id=user.id, degree=row.degree, school=row.school,
+                            start_date=row.start_date, end_date=row.end_date or None,
+                            description=row.description or None, position=position,
+                        )
                     )
-                )
+                    position += 1
 
         if activate_photo:
             ensure_section_active(session, user.id, "photo")

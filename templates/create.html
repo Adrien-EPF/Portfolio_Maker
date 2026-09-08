@@ -17,16 +17,16 @@
       <legend>Identité</legend>
       <div class="field">
         <label for="username">Nom d'utilisateur <span class="required">*</span></label>
-        <input id="username" class="input" type="text" name="username" required />
+        <input id="username" class="input" type="text" name="username" value="{{ username }}" required />
       </div>
       <div class="field-row">
         <div class="field">
           <label for="firstname">Prénom <span class="required">*</span></label>
-          <input id="firstname" class="input" type="text" name="firstname" required />
+          <input id="firstname" class="input" type="text" name="firstname" value="{{ firstname }}" required />
         </div>
         <div class="field">
           <label for="name">Nom <span class="required">*</span></label>
-          <input id="name" class="input" type="text" name="name" required />
+          <input id="name" class="input" type="text" name="name" value="{{ name }}" required />
         </div>
       </div>
     </fieldset>
@@ -36,11 +36,11 @@
       <div class="field-row">
         <div class="field">
           <label for="email">Email <span class="required">*</span></label>
-          <input id="email" class="input" type="email" name="email" required />
+          <input id="email" class="input" type="email" name="email" value="{{ email }}" required />
         </div>
         <div class="field">
           <label for="phone">Téléphone <span class="required">*</span></label>
-          <input id="phone" class="input" type="tel" name="phone" required />
+          <input id="phone" class="input" type="tel" name="phone" value="{{ phone }}" required />
         </div>
       </div>
     </fieldset>
@@ -50,11 +50,11 @@
       <p class="hint">Optionnel.</p>
       <div class="field">
         <label for="github">GitHub</label>
-        <input id="github" class="input" type="text" name="github" placeholder="https://github.com/…" />
+        <input id="github" class="input" type="text" name="github" value="{{ github }}" placeholder="https://github.com/…" />
       </div>
       <div class="field">
         <label for="bio">Bio / description</label>
-        <textarea id="bio" class="input" name="bio" rows="4" placeholder="Parlez de vous…"></textarea>
+        <textarea id="bio" class="input" name="bio" rows="4" placeholder="Parlez de vous…">{{ bio }}</textarea>
       </div>
     </fieldset>
 
@@ -63,82 +63,97 @@
       <p class="hint hint-wide">Cochez celles que vous voulez remplir dès maintenant. Vous pourrez en ajouter, en retirer ou tout modifier ensuite.</p>
 
       <div class="section-toggle">
-        <label class="toggle"><input type="checkbox" name="activate_skills" />Compétences</label>
-        <div class="field-row">
-          <div class="field">
-            <label for="skill-name">Compétence</label>
-            <input id="skill-name" class="input" type="text" name="skill_name" />
-          </div>
-          <div class="field">
-            <label for="skill-level">Niveau</label>
-            <select id="skill-level" class="input" name="skill_level">
-              <option value="">—</option>
-              <option value="Débutant">Débutant</option>
-              <option value="Intermédiaire">Intermédiaire</option>
-              <option value="Expert">Expert</option>
-            </select>
+        <label class="toggle"><input type="checkbox" name="activate_skills" {% if activate_skills %}checked{% endif %} />Compétences</label>
+        {% for row in skill_rows %}
+        <div class="entry-row">
+          <div class="field-row">
+            <div class="field">
+              <label for="skill-name-{{ loop.index0 }}">Compétence</label>
+              <input id="skill-name-{{ loop.index0 }}" class="input" type="text" name="skill_name" value="{{ row.name }}" />
+            </div>
+            <div class="field">
+              <label for="skill-level-{{ loop.index0 }}">Niveau</label>
+              <select id="skill-level-{{ loop.index0 }}" class="input" name="skill_level">
+                <option value="" {% if not row.level %}selected{% endif %}>—</option>
+                <option value="Débutant" {% if row.level == "Débutant" %}selected{% endif %}>Débutant</option>
+                <option value="Intermédiaire" {% if row.level == "Intermédiaire" %}selected{% endif %}>Intermédiaire</option>
+                <option value="Expert" {% if row.level == "Expert" %}selected{% endif %}>Expert</option>
+              </select>
+            </div>
           </div>
         </div>
+        {% endfor %}
+        <button type="submit" name="add_row" value="skills" class="btn btn-ghost btn-add-row" formnovalidate>+ Ajouter une autre compétence</button>
       </div>
 
       <div class="section-toggle">
-        <label class="toggle"><input type="checkbox" name="activate_experience" />Expériences</label>
-        <div class="field-row">
-          <div class="field">
-            <label for="exp-title">Intitulé de la mission</label>
-            <input id="exp-title" class="input" type="text" name="exp_title" />
+        <label class="toggle"><input type="checkbox" name="activate_experience" {% if activate_experience %}checked{% endif %} />Expériences</label>
+        {% for row in exp_rows %}
+        <div class="entry-row">
+          <div class="field-row">
+            <div class="field">
+              <label for="exp-title-{{ loop.index0 }}">Intitulé de la mission</label>
+              <input id="exp-title-{{ loop.index0 }}" class="input" type="text" name="exp_title" value="{{ row.title }}" />
+            </div>
+            <div class="field">
+              <label for="exp-company-{{ loop.index0 }}">Entreprise / établissement</label>
+              <input id="exp-company-{{ loop.index0 }}" class="input" type="text" name="exp_company" value="{{ row.company }}" />
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label for="exp-start-{{ loop.index0 }}">Date de début</label>
+              <input id="exp-start-{{ loop.index0 }}" class="input" type="text" name="exp_start_date" value="{{ row.start_date }}" />
+            </div>
+            <div class="field">
+              <label for="exp-end-{{ loop.index0 }}">Date de fin</label>
+              <input id="exp-end-{{ loop.index0 }}" class="input" type="text" name="exp_end_date" value="{{ row.end_date }}" placeholder="Vide si poste actuel" />
+            </div>
           </div>
           <div class="field">
-            <label for="exp-company">Entreprise / établissement</label>
-            <input id="exp-company" class="input" type="text" name="exp_company" />
+            <label for="exp-description-{{ loop.index0 }}">Description</label>
+            <textarea id="exp-description-{{ loop.index0 }}" class="input" name="exp_description" rows="3">{{ row.description }}</textarea>
           </div>
         </div>
-        <div class="field-row">
-          <div class="field">
-            <label for="exp-start">Date de début</label>
-            <input id="exp-start" class="input" type="text" name="exp_start_date" />
-          </div>
-          <div class="field">
-            <label for="exp-end">Date de fin</label>
-            <input id="exp-end" class="input" type="text" name="exp_end_date" placeholder="Vide si poste actuel" />
-          </div>
-        </div>
-        <div class="field">
-          <label for="exp-description">Description</label>
-          <textarea id="exp-description" class="input" name="exp_description" rows="3"></textarea>
-        </div>
+        {% endfor %}
+        <button type="submit" name="add_row" value="experience" class="btn btn-ghost btn-add-row" formnovalidate>+ Ajouter une autre expérience</button>
       </div>
 
       <div class="section-toggle">
-        <label class="toggle"><input type="checkbox" name="activate_education" />Formation</label>
-        <div class="field-row">
-          <div class="field">
-            <label for="edu-degree">Diplôme</label>
-            <input id="edu-degree" class="input" type="text" name="edu_degree" />
+        <label class="toggle"><input type="checkbox" name="activate_education" {% if activate_education %}checked{% endif %} />Formation</label>
+        {% for row in edu_rows %}
+        <div class="entry-row">
+          <div class="field-row">
+            <div class="field">
+              <label for="edu-degree-{{ loop.index0 }}">Diplôme</label>
+              <input id="edu-degree-{{ loop.index0 }}" class="input" type="text" name="edu_degree" value="{{ row.degree }}" />
+            </div>
+            <div class="field">
+              <label for="edu-school-{{ loop.index0 }}">Établissement</label>
+              <input id="edu-school-{{ loop.index0 }}" class="input" type="text" name="edu_school" value="{{ row.school }}" />
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label for="edu-start-{{ loop.index0 }}">Date de début</label>
+              <input id="edu-start-{{ loop.index0 }}" class="input" type="text" name="edu_start_date" value="{{ row.start_date }}" />
+            </div>
+            <div class="field">
+              <label for="edu-end-{{ loop.index0 }}">Date de fin</label>
+              <input id="edu-end-{{ loop.index0 }}" class="input" type="text" name="edu_end_date" value="{{ row.end_date }}" placeholder="Vide si en cours" />
+            </div>
           </div>
           <div class="field">
-            <label for="edu-school">Établissement</label>
-            <input id="edu-school" class="input" type="text" name="edu_school" />
+            <label for="edu-description-{{ loop.index0 }}">Description</label>
+            <textarea id="edu-description-{{ loop.index0 }}" class="input" name="edu_description" rows="3">{{ row.description }}</textarea>
           </div>
         </div>
-        <div class="field-row">
-          <div class="field">
-            <label for="edu-start">Date de début</label>
-            <input id="edu-start" class="input" type="text" name="edu_start_date" />
-          </div>
-          <div class="field">
-            <label for="edu-end">Date de fin</label>
-            <input id="edu-end" class="input" type="text" name="edu_end_date" placeholder="Vide si en cours" />
-          </div>
-        </div>
-        <div class="field">
-          <label for="edu-description">Description</label>
-          <textarea id="edu-description" class="input" name="edu_description" rows="3"></textarea>
-        </div>
+        {% endfor %}
+        <button type="submit" name="add_row" value="education" class="btn btn-ghost btn-add-row" formnovalidate>+ Ajouter une autre formation</button>
       </div>
 
       <div class="section-toggle">
-        <label class="toggle"><input type="checkbox" name="activate_photo" />Photo</label>
+        <label class="toggle"><input type="checkbox" name="activate_photo" {% if activate_photo %}checked{% endif %} />Photo</label>
         <div class="field">
           <label for="create-photo-file">Fichier — jpg, png, webp, 5 Mo max</label>
           <input id="create-photo-file" class="input-file" type="file" name="photo" accept=".jpg,.jpeg,.png,.webp" />
