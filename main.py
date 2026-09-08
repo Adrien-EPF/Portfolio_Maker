@@ -339,10 +339,38 @@ async def create_user(
         return RedirectResponse(f"/portfolio/{user.id}", status_code=303)
 
 
-# Portfolio
+# Portfolio (vue publique, lecture seule — le CV)
 
 @app.get("/portfolio/{user_id}")
-def show_portfolio(
+def show_portfolio(request: Request, user_id: int):
+    with Session(engine) as session:
+        user = session.get(User, user_id)
+        if not user:
+            raise HTTPException(status_code=404, detail="Utilisateur introuvable")
+        active_sections = get_active_sections(session, user_id)
+        active_types = {s.section_type for s in active_sections}
+        skills = session.exec(
+            select(Skill).where(Skill.user_id == user_id).order_by(Skill.position)
+        ).all() if "skills" in active_types else []
+        experiences = session.exec(
+            select(Experience).where(Experience.user_id == user_id).order_by(Experience.position)
+        ).all() if "experience" in active_types else []
+        educations = session.exec(
+            select(Education).where(Education.user_id == user_id).order_by(Education.position)
+        ).all() if "education" in active_types else []
+        return templates.TemplateResponse(
+            request, "portfolio.html",
+            context={
+                "user": user, "skills": skills, "experiences": experiences, "educations": educations,
+                "active_types": active_types,
+            },
+        )
+
+
+# Portfolio (gestion — modification de tout le contenu)
+
+@app.get("/portfolio/{user_id}/edit")
+def show_portfolio_edit(
     request: Request,
     user_id: int,
     edit: str | None = None,
@@ -367,7 +395,7 @@ def show_portfolio(
         active_types = {s.section_type for s in active_sections}
         inactive_types = [t for t in SECTION_TYPES if t not in active_types]
         return templates.TemplateResponse(
-            request, "portfolio.html",
+            request, "portfolio_edit.html",
             context={
                 "user": user, "skills": skills, "experiences": experiences, "educations": educations,
                 "active_sections": active_sections, "active_types": active_types,
@@ -404,7 +432,7 @@ def edit_user(
         user.bio = bio
         session.add(user)
         session.commit()
-    return RedirectResponse(f"/portfolio/{user_id}", status_code=303)
+    return RedirectResponse(f"/portfolio/{user_id}/edit", status_code=303)
 
 
 # Sections
@@ -418,7 +446,7 @@ def add_section(user_id: int, section_type: str):
         if not user:
             raise HTTPException(status_code=404, detail="Utilisateur introuvable")
         ensure_section_active(session, user_id, section_type)
-    return RedirectResponse(f"/portfolio/{user_id}", status_code=303)
+    return RedirectResponse(f"/portfolio/{user_id}/edit", status_code=303)
 
 
 @app.post("/portfolio/{user_id}/sections/{section_type}/remove")
@@ -433,7 +461,7 @@ def remove_section(user_id: int, section_type: str):
         if section:
             session.delete(section)
             session.commit()
-    return RedirectResponse(f"/portfolio/{user_id}", status_code=303)
+    return RedirectResponse(f"/portfolio/{user_id}/edit", status_code=303)
 
 
 @app.post("/portfolio/{user_id}/sections/{section_type}/move")
@@ -442,7 +470,7 @@ def move_section_route(user_id: int, section_type: str, direction: Annotated[str
         raise HTTPException(status_code=400, detail="Direction invalide")
     with Session(engine) as session:
         move_section(session, user_id, section_type, direction)
-    return RedirectResponse(f"/portfolio/{user_id}", status_code=303)
+    return RedirectResponse(f"/portfolio/{user_id}/edit", status_code=303)
 
 
 # Skills
@@ -459,7 +487,7 @@ def add_skill(
         skill = Skill(user_id=user_id, name=name, level=level or None, position=position)
         session.add(skill)
         session.commit()
-    return RedirectResponse(f"/portfolio/{user_id}", status_code=303)
+    return RedirectResponse(f"/portfolio/{user_id}/edit", status_code=303)
 
 
 @app.post("/portfolio/{user_id}/skills/{skill_id}/edit")
@@ -477,7 +505,7 @@ def edit_skill(
         skill.level = level or None
         session.add(skill)
         session.commit()
-    return RedirectResponse(f"/portfolio/{user_id}", status_code=303)
+    return RedirectResponse(f"/portfolio/{user_id}/edit", status_code=303)
 
 
 @app.post("/portfolio/{user_id}/skills/{skill_id}/delete")
@@ -488,7 +516,7 @@ def delete_skill(user_id: int, skill_id: int):
             raise HTTPException(status_code=404, detail="Compétence introuvable")
         session.delete(skill)
         session.commit()
-    return RedirectResponse(f"/portfolio/{user_id}", status_code=303)
+    return RedirectResponse(f"/portfolio/{user_id}/edit", status_code=303)
 
 
 @app.post("/portfolio/{user_id}/skills/{skill_id}/move")
@@ -497,7 +525,7 @@ def move_skill(user_id: int, skill_id: int, direction: Annotated[str, Form()]):
         raise HTTPException(status_code=400, detail="Direction invalide")
     with Session(engine) as session:
         move_item(session, Skill, user_id, skill_id, direction)
-    return RedirectResponse(f"/portfolio/{user_id}", status_code=303)
+    return RedirectResponse(f"/portfolio/{user_id}/edit", status_code=303)
 
 
 # Expériences
@@ -523,7 +551,7 @@ def add_experience(
         )
         session.add(exp)
         session.commit()
-    return RedirectResponse(f"/portfolio/{user_id}", status_code=303)
+    return RedirectResponse(f"/portfolio/{user_id}/edit", status_code=303)
 
 
 @app.post("/portfolio/{user_id}/experiences/{exp_id}/edit")
@@ -547,7 +575,7 @@ def edit_experience(
         exp.description = description or None
         session.add(exp)
         session.commit()
-    return RedirectResponse(f"/portfolio/{user_id}", status_code=303)
+    return RedirectResponse(f"/portfolio/{user_id}/edit", status_code=303)
 
 
 @app.post("/portfolio/{user_id}/experiences/{exp_id}/delete")
@@ -558,7 +586,7 @@ def delete_experience(user_id: int, exp_id: int):
             raise HTTPException(status_code=404, detail="Expérience introuvable")
         session.delete(exp)
         session.commit()
-    return RedirectResponse(f"/portfolio/{user_id}", status_code=303)
+    return RedirectResponse(f"/portfolio/{user_id}/edit", status_code=303)
 
 
 @app.post("/portfolio/{user_id}/experiences/{exp_id}/move")
@@ -567,7 +595,7 @@ def move_experience(user_id: int, exp_id: int, direction: Annotated[str, Form()]
         raise HTTPException(status_code=400, detail="Direction invalide")
     with Session(engine) as session:
         move_item(session, Experience, user_id, exp_id, direction)
-    return RedirectResponse(f"/portfolio/{user_id}", status_code=303)
+    return RedirectResponse(f"/portfolio/{user_id}/edit", status_code=303)
 
 
 # Formations
@@ -593,7 +621,7 @@ def add_education(
         )
         session.add(edu)
         session.commit()
-    return RedirectResponse(f"/portfolio/{user_id}", status_code=303)
+    return RedirectResponse(f"/portfolio/{user_id}/edit", status_code=303)
 
 
 @app.post("/portfolio/{user_id}/educations/{edu_id}/edit")
@@ -617,7 +645,7 @@ def edit_education(
         edu.description = description or None
         session.add(edu)
         session.commit()
-    return RedirectResponse(f"/portfolio/{user_id}", status_code=303)
+    return RedirectResponse(f"/portfolio/{user_id}/edit", status_code=303)
 
 
 @app.post("/portfolio/{user_id}/educations/{edu_id}/delete")
@@ -628,7 +656,7 @@ def delete_education(user_id: int, edu_id: int):
             raise HTTPException(status_code=404, detail="Formation introuvable")
         session.delete(edu)
         session.commit()
-    return RedirectResponse(f"/portfolio/{user_id}", status_code=303)
+    return RedirectResponse(f"/portfolio/{user_id}/edit", status_code=303)
 
 
 @app.post("/portfolio/{user_id}/educations/{edu_id}/move")
@@ -637,7 +665,7 @@ def move_education(user_id: int, edu_id: int, direction: Annotated[str, Form()])
         raise HTTPException(status_code=400, detail="Direction invalide")
     with Session(engine) as session:
         move_item(session, Education, user_id, edu_id, direction)
-    return RedirectResponse(f"/portfolio/{user_id}", status_code=303)
+    return RedirectResponse(f"/portfolio/{user_id}/edit", status_code=303)
 
 
 # Photo
@@ -660,7 +688,7 @@ async def upload_photo(user_id: int, photo: Annotated[UploadFile, File()]):
         session.add(user)
         ensure_section_active(session, user_id, "photo")
         session.commit()
-    return RedirectResponse(f"/portfolio/{user_id}", status_code=303)
+    return RedirectResponse(f"/portfolio/{user_id}/edit", status_code=303)
 
 
 # Liste utilisateurs

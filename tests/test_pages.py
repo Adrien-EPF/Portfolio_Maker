@@ -46,7 +46,7 @@ def test_home_page_shows_two_choices(client):
 
 def test_nav_chrome_is_consistent_across_pages(client):
     user_id = create_user(client)
-    for path in ["/", "/create", "/users", f"/portfolio/{user_id}"]:
+    for path in ["/", "/create", "/users", f"/portfolio/{user_id}", f"/portfolio/{user_id}/edit"]:
         response = client.get(path)
         assert response.status_code == 200
         text = response.text
@@ -136,19 +136,13 @@ def test_create_user_redirects_and_persists(client):
     assert "jdupont@example.com" in response.text
 
 
-def test_portfolio_starts_with_no_active_sections(client):
-    user_id = create_user(client)
-    response = client.get(f"/portfolio/{user_id}")
-    assert response.status_code == 200
-    assert "Ajouter la section Compétences" in response.text
-    assert "Ajouter la section Expériences" in response.text
-    assert "Ajouter la section Formation" in response.text
-    assert "Ajouter la section Photo" in response.text
-    assert "Aucune compétence" not in response.text
-
-
 def test_portfolio_not_found_returns_404(client):
     response = client.get("/portfolio/999")
+    assert response.status_code == 404
+
+
+def test_portfolio_edit_not_found_returns_404(client):
+    response = client.get("/portfolio/999/edit")
     assert response.status_code == 404
 
 
@@ -166,6 +160,136 @@ def test_users_page_lists_created_users(client):
     assert "jdupont@example.com" in response.text
 
 
+def test_users_page_voir_link_points_to_public_portfolio_not_edit(client):
+    user_id = create_user(client)
+    response = client.get("/users")
+    assert f'href="/portfolio/{user_id}"' in response.text
+    assert f'href="/portfolio/{user_id}/edit"' not in response.text
+
+
+# Public portfolio (the CV)
+
+
+def test_public_portfolio_starts_with_no_active_sections(client):
+    user_id = create_user(client)
+    response = client.get(f"/portfolio/{user_id}")
+    assert response.status_code == 200
+    text = response.text
+    assert "Jean" in text
+    assert "Dupont" in text
+    assert "Ajouter la section" not in text
+
+
+def test_public_portfolio_shows_active_sections_content(client):
+    user_id = create_user(client)
+    client.post(
+        f"/portfolio/{user_id}/skills/add",
+        data={"name": "Python", "level": "Expert"},
+        follow_redirects=False,
+    )
+    client.post(
+        f"/portfolio/{user_id}/experiences/add",
+        data={"title": "Développeuse", "company": "Acme", "start_date": "2020"},
+        follow_redirects=False,
+    )
+    client.post(
+        f"/portfolio/{user_id}/educations/add",
+        data={"degree": "Master Informatique", "school": "Université de Montpellier", "start_date": "2023"},
+        follow_redirects=False,
+    )
+    page = client.get(f"/portfolio/{user_id}")
+    assert page.status_code == 200
+    assert "Python" in page.text
+    assert "Développeuse" in page.text and "Acme" in page.text
+    assert "Master Informatique" in page.text and "Université de Montpellier" in page.text
+
+
+def test_public_portfolio_omits_section_data_when_section_removed(client):
+    user_id = create_user(client)
+    client.post(
+        f"/portfolio/{user_id}/skills/add", data={"name": "Python"}, follow_redirects=False
+    )
+    client.post(
+        f"/portfolio/{user_id}/sections/skills/remove", follow_redirects=False
+    )
+    page = client.get(f"/portfolio/{user_id}")
+    assert "Python" not in page.text
+
+
+def test_public_portfolio_never_shows_management_controls(client):
+    user_id = create_user(client)
+    client.post(
+        f"/portfolio/{user_id}/skills/add", data={"name": "Python"}, follow_redirects=False
+    )
+    page = client.get(f"/portfolio/{user_id}")
+    text = page.text
+    assert "Ajouter la section" not in text
+    assert "Retirer la section" not in text
+    assert "Supprimer" not in text
+    assert "Modifier mon profil" not in text
+    assert "Ajouter une compétence" not in text
+    assert "/skills/add" not in text
+
+
+def test_public_portfolio_omits_optional_fields_when_absent(client):
+    user_id = create_user(client)
+    page = client.get(f"/portfolio/{user_id}")
+    text = page.text
+    assert "GitHub" not in text
+    assert "<img" not in text
+
+
+def test_public_portfolio_shows_github_and_photo_when_present(client):
+    user_id = create_user(client, github="https://github.com/jdupont")
+    client.post(
+        f"/portfolio/{user_id}/photo/upload",
+        files={"photo": ("avatar.png", b"\x89PNG\r\n\x1a\n" + b"0" * 20, "image/png")},
+        follow_redirects=False,
+    )
+    page = client.get(f"/portfolio/{user_id}")
+    text = page.text
+    assert "github.com/jdupont" in text
+    assert f"/static/uploads/user_{user_id}.png" in text
+
+
+def test_public_portfolio_skill_level_renders_as_dots_with_aria_label(client):
+    user_id = create_user(client)
+    client.post(
+        f"/portfolio/{user_id}/skills/add",
+        data={"name": "Python", "level": "Expert"},
+        follow_redirects=False,
+    )
+    page = client.get(f"/portfolio/{user_id}")
+    assert 'aria-label="Expert"' in page.text
+    assert "●●●" in page.text
+
+
+def test_public_portfolio_has_modifier_link_to_edit_page(client):
+    user_id = create_user(client)
+    page = client.get(f"/portfolio/{user_id}")
+    assert f'href="/portfolio/{user_id}/edit"' in page.text
+
+
+def test_edit_page_has_link_back_to_public_portfolio(client):
+    user_id = create_user(client)
+    page = client.get(f"/portfolio/{user_id}/edit")
+    assert f'href="/portfolio/{user_id}"' in page.text
+
+
+# Portfolio management (/portfolio/{id}/edit)
+
+
+def test_portfolio_edit_starts_with_no_active_sections(client):
+    user_id = create_user(client)
+    response = client.get(f"/portfolio/{user_id}/edit")
+    assert response.status_code == 200
+    assert "Ajouter la section Compétences" in response.text
+    assert "Ajouter la section Expériences" in response.text
+    assert "Ajouter la section Formation" in response.text
+    assert "Ajouter la section Photo" in response.text
+    assert "Aucune compétence" not in response.text
+
+
 def test_add_and_delete_skill(client):
     user_id = create_user(client)
 
@@ -175,17 +299,17 @@ def test_add_and_delete_skill(client):
         follow_redirects=False,
     )
     assert add_response.status_code == 303
-    portfolio_page = client.get(f"/portfolio/{user_id}")
-    assert "Python" in portfolio_page.text
-    assert "Expert" in portfolio_page.text
+    edit_page = client.get(f"/portfolio/{user_id}/edit")
+    assert "Python" in edit_page.text
+    assert "Expert" in edit_page.text
 
-    skill_id = _extract_first_id(portfolio_page.text, "skills")
+    skill_id = _extract_first_id(edit_page.text, "skills")
     delete_response = client.post(
         f"/portfolio/{user_id}/skills/{skill_id}/delete", follow_redirects=False
     )
     assert delete_response.status_code == 303
-    portfolio_page_after = client.get(f"/portfolio/{user_id}")
-    assert "Python" not in portfolio_page_after.text
+    edit_page_after = client.get(f"/portfolio/{user_id}/edit")
+    assert "Python" not in edit_page_after.text
 
 
 def test_add_and_delete_experience(client):
@@ -203,17 +327,17 @@ def test_add_and_delete_experience(client):
         follow_redirects=False,
     )
     assert add_response.status_code == 303
-    portfolio_page = client.get(f"/portfolio/{user_id}")
-    assert "Développeur" in portfolio_page.text
-    assert "Acme" in portfolio_page.text
+    edit_page = client.get(f"/portfolio/{user_id}/edit")
+    assert "Développeur" in edit_page.text
+    assert "Acme" in edit_page.text
 
-    exp_id = _extract_first_id(portfolio_page.text, "experiences")
+    exp_id = _extract_first_id(edit_page.text, "experiences")
     delete_response = client.post(
         f"/portfolio/{user_id}/experiences/{exp_id}/delete", follow_redirects=False
     )
     assert delete_response.status_code == 303
-    portfolio_page_after = client.get(f"/portfolio/{user_id}")
-    assert "Acme" not in portfolio_page_after.text
+    edit_page_after = client.get(f"/portfolio/{user_id}/edit")
+    assert "Acme" not in edit_page_after.text
 
 
 def test_add_and_delete_education(client):
@@ -231,17 +355,17 @@ def test_add_and_delete_education(client):
         follow_redirects=False,
     )
     assert add_response.status_code == 303
-    portfolio_page = client.get(f"/portfolio/{user_id}")
-    assert "Master Informatique" in portfolio_page.text
-    assert "Université de Montpellier" in portfolio_page.text
+    edit_page = client.get(f"/portfolio/{user_id}/edit")
+    assert "Master Informatique" in edit_page.text
+    assert "Université de Montpellier" in edit_page.text
 
-    edu_id = _extract_first_id(portfolio_page.text, "educations")
+    edu_id = _extract_first_id(edit_page.text, "educations")
     delete_response = client.post(
         f"/portfolio/{user_id}/educations/{edu_id}/delete", follow_redirects=False
     )
     assert delete_response.status_code == 303
-    portfolio_page_after = client.get(f"/portfolio/{user_id}")
-    assert "Master Informatique" not in portfolio_page_after.text
+    edit_page_after = client.get(f"/portfolio/{user_id}/edit")
+    assert "Master Informatique" not in edit_page_after.text
 
 
 def test_delete_user_removes_portfolio(client):
@@ -261,7 +385,7 @@ def test_adding_skill_activates_its_section(client):
         data={"name": "Python", "level": "Expert"},
         follow_redirects=False,
     )
-    page = client.get(f"/portfolio/{user_id}")
+    page = client.get(f"/portfolio/{user_id}/edit")
     assert "Retirer la section Compétences" in page.text
     assert "Ajouter la section Compétences" not in page.text
 
@@ -278,7 +402,7 @@ def test_retiring_section_preserves_data_and_readding_restores_it(client):
         f"/portfolio/{user_id}/sections/skills/remove", follow_redirects=False
     )
     assert remove_response.status_code == 303
-    page_after_remove = client.get(f"/portfolio/{user_id}")
+    page_after_remove = client.get(f"/portfolio/{user_id}/edit")
     assert "Python" not in page_after_remove.text
     assert "Ajouter la section Compétences" in page_after_remove.text
 
@@ -286,7 +410,7 @@ def test_retiring_section_preserves_data_and_readding_restores_it(client):
         f"/portfolio/{user_id}/sections/skills/add", follow_redirects=False
     )
     assert add_back_response.status_code == 303
-    page_after_readd = client.get(f"/portfolio/{user_id}")
+    page_after_readd = client.get(f"/portfolio/{user_id}/edit")
     assert "Python" in page_after_readd.text
 
 
@@ -301,7 +425,7 @@ def test_move_section_changes_display_order(client):
         follow_redirects=False,
     )
 
-    page_before = client.get(f"/portfolio/{user_id}").text
+    page_before = client.get(f"/portfolio/{user_id}/edit").text
     assert page_before.index(">Compétences<") < page_before.index(">Expériences<")
 
     move_response = client.post(
@@ -310,7 +434,7 @@ def test_move_section_changes_display_order(client):
         follow_redirects=False,
     )
     assert move_response.status_code == 303
-    page_after = client.get(f"/portfolio/{user_id}").text
+    page_after = client.get(f"/portfolio/{user_id}/edit").text
     assert page_after.index(">Expériences<") < page_after.index(">Compétences<")
 
 
@@ -322,7 +446,7 @@ def test_move_item_changes_order_within_section(client):
     client.post(
         f"/portfolio/{user_id}/skills/add", data={"name": "Rust"}, follow_redirects=False
     )
-    page_before = client.get(f"/portfolio/{user_id}")
+    page_before = client.get(f"/portfolio/{user_id}/edit")
     assert page_before.text.index("Python") < page_before.text.index("Rust")
 
     python_id = _extract_first_id(page_before.text, "skills")
@@ -332,7 +456,7 @@ def test_move_item_changes_order_within_section(client):
         follow_redirects=False,
     )
     assert move_response.status_code == 303
-    page_after = client.get(f"/portfolio/{user_id}")
+    page_after = client.get(f"/portfolio/{user_id}/edit")
     assert page_after.text.index("Rust") < page_after.text.index("Python")
 
 
@@ -344,7 +468,7 @@ def test_photo_upload_activates_section_and_shows_image(client):
         follow_redirects=False,
     )
     assert upload_response.status_code == 303
-    page = client.get(f"/portfolio/{user_id}")
+    page = client.get(f"/portfolio/{user_id}/edit")
     assert f"/static/uploads/user_{user_id}.png" in page.text
     assert "Retirer la section Photo" in page.text
 
@@ -386,7 +510,7 @@ def test_create_user_with_section_entries_activates_and_populates(client):
     )
     assert response.status_code == 303
     user_id = int(response.headers["location"].rsplit("/", 1)[-1])
-    page = client.get(f"/portfolio/{user_id}")
+    page = client.get(f"/portfolio/{user_id}/edit")
     assert "Retirer la section Compétences" in page.text
     assert "Python" in page.text
     assert "Retirer la section Expériences" in page.text
@@ -410,7 +534,7 @@ def test_create_user_with_ticked_section_and_blank_entry_activates_with_no_items
     )
     assert response.status_code == 303
     user_id = int(response.headers["location"].rsplit("/", 1)[-1])
-    page = client.get(f"/portfolio/{user_id}")
+    page = client.get(f"/portfolio/{user_id}/edit")
     assert "Retirer la section Compétences" in page.text
     assert "Aucune compétence ajoutée pour le moment." in page.text
 
@@ -463,7 +587,7 @@ def test_create_user_with_photo_activates_photo_section(client):
     )
     assert response.status_code == 303
     user_id = int(response.headers["location"].rsplit("/", 1)[-1])
-    page = client.get(f"/portfolio/{user_id}")
+    page = client.get(f"/portfolio/{user_id}/edit")
     assert f"/static/uploads/user_{user_id}.png" in page.text
     assert "Retirer la section Photo" in page.text
 
@@ -487,7 +611,7 @@ def test_edit_profile_updates_displayed_info(client):
         follow_redirects=False,
     )
     assert response.status_code == 303
-    page = client.get(f"/portfolio/{user_id}")
+    page = client.get(f"/portfolio/{user_id}/edit")
     assert "jdupont2" in page.text
     assert "jean.dupont@example.com" in page.text
     assert "0611111111" in page.text
@@ -496,7 +620,7 @@ def test_edit_profile_updates_displayed_info(client):
 
 def test_edit_profile_form_is_prefilled(client):
     user_id = create_user(client)
-    page = client.get(f"/portfolio/{user_id}?edit=profile")
+    page = client.get(f"/portfolio/{user_id}/edit?edit=profile")
     assert page.status_code == 200
     assert 'value="jdupont"' in page.text
     assert 'value="jdupont@example.com"' in page.text
@@ -541,7 +665,7 @@ def test_edit_skill_updates_value_and_keeps_position(client):
     client.post(
         f"/portfolio/{user_id}/skills/add", data={"name": "Rust", "level": "Débutant"}, follow_redirects=False
     )
-    page_before = client.get(f"/portfolio/{user_id}")
+    page_before = client.get(f"/portfolio/{user_id}/edit")
     python_id = _extract_first_id(page_before.text, "skills")
 
     edit_response = client.post(
@@ -550,7 +674,7 @@ def test_edit_skill_updates_value_and_keeps_position(client):
         follow_redirects=False,
     )
     assert edit_response.status_code == 303
-    page_after = client.get(f"/portfolio/{user_id}")
+    page_after = client.get(f"/portfolio/{user_id}/edit")
     assert "<span>Python</span>" not in page_after.text
     assert "<span>Go</span>" in page_after.text
     assert page_after.text.index("Go") < page_after.text.index("Rust")
@@ -561,10 +685,10 @@ def test_edit_skill_form_is_prefilled(client):
     client.post(
         f"/portfolio/{user_id}/skills/add", data={"name": "Python", "level": "Expert"}, follow_redirects=False
     )
-    page = client.get(f"/portfolio/{user_id}")
+    page = client.get(f"/portfolio/{user_id}/edit")
     skill_id = _extract_first_id(page.text, "skills")
 
-    edit_page = client.get(f"/portfolio/{user_id}?edit_skill={skill_id}")
+    edit_page = client.get(f"/portfolio/{user_id}/edit?edit_skill={skill_id}")
     assert edit_page.status_code == 200
     assert 'value="Python"' in edit_page.text
 
@@ -573,7 +697,7 @@ def test_edit_skill_wrong_user_returns_404(client):
     user_id = create_user(client)
     other_user_id = create_user(client, username="other", email="other@example.com")
     client.post(f"/portfolio/{user_id}/skills/add", data={"name": "Python"}, follow_redirects=False)
-    page = client.get(f"/portfolio/{user_id}")
+    page = client.get(f"/portfolio/{user_id}/edit")
     skill_id = _extract_first_id(page.text, "skills")
 
     response = client.post(
@@ -594,7 +718,7 @@ def test_edit_experience_updates_value_and_keeps_position(client):
         data={"title": "Consultant", "company": "Beta", "start_date": "2022"},
         follow_redirects=False,
     )
-    page_before = client.get(f"/portfolio/{user_id}")
+    page_before = client.get(f"/portfolio/{user_id}/edit")
     first_id = _extract_first_id(page_before.text, "experiences")
 
     edit_response = client.post(
@@ -609,7 +733,7 @@ def test_edit_experience_updates_value_and_keeps_position(client):
         follow_redirects=False,
     )
     assert edit_response.status_code == 303
-    page_after = client.get(f"/portfolio/{user_id}")
+    page_after = client.get(f"/portfolio/{user_id}/edit")
     assert "<h3>Développeur — Acme</h3>" not in page_after.text
     assert "<h3>Lead Développeur — Acme</h3>" in page_after.text
     assert "Encadrement d une equipe technique" in page_after.text
@@ -624,7 +748,7 @@ def test_edit_experience_wrong_user_returns_404(client):
         data={"title": "Développeur", "company": "Acme", "start_date": "2020"},
         follow_redirects=False,
     )
-    page = client.get(f"/portfolio/{user_id}")
+    page = client.get(f"/portfolio/{user_id}/edit")
     exp_id = _extract_first_id(page.text, "experiences")
 
     response = client.post(
@@ -651,7 +775,7 @@ def test_edit_education_updates_value_and_keeps_position(client):
         },
         follow_redirects=False,
     )
-    page_before = client.get(f"/portfolio/{user_id}")
+    page_before = client.get(f"/portfolio/{user_id}/edit")
     first_id = _extract_first_id(page_before.text, "educations")
 
     edit_response = client.post(
@@ -664,7 +788,7 @@ def test_edit_education_updates_value_and_keeps_position(client):
         follow_redirects=False,
     )
     assert edit_response.status_code == 303
-    page_after = client.get(f"/portfolio/{user_id}")
+    page_after = client.get(f"/portfolio/{user_id}/edit")
     assert "Master Informatique (spécialité IA)" in page_after.text
     assert page_after.text.index("Master Informatique (spécialité IA)") < page_after.text.index(
         "Licence Informatique"
@@ -679,7 +803,7 @@ def test_edit_education_wrong_user_returns_404(client):
         data={"degree": "Master Informatique", "school": "Université de Montpellier", "start_date": "2023"},
         follow_redirects=False,
     )
-    page = client.get(f"/portfolio/{user_id}")
+    page = client.get(f"/portfolio/{user_id}/edit")
     edu_id = _extract_first_id(page.text, "educations")
 
     response = client.post(

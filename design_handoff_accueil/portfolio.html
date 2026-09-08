@@ -1,3 +1,10 @@
+{# portfolio.html — la page d'un portfolio fini, en CV.
+   Remplace templates/portfolio.html (route GET /portfolio/{id}).
+   Champs attendus : user.firstname, .name, .username, .email, .phone,
+   .github, .headline (optionnel), .bio, .photo_url, .skills[.name .level],
+   .experiences[.title .company .start_date .end_date .description],
+   .educations[.degree .school .start_date .end_date .description].
+   Renommez à la marge selon vos modèles : la structure ne change pas. #}
 {% extends "base.html" %}
 {% block title %}{{ user.firstname }} {{ user.name }}{% endblock %}
 
@@ -10,8 +17,8 @@
       <h1 class="cv-name">{{ user.firstname }} {{ user.name }}</h1>
       {% if user.headline %}<p class="cv-headline">{{ user.headline }}</p>{% endif %}
     </div>
-    {% if "photo" in active_types and user.photo_filename %}
-    <img class="cv-photo" src="/static/uploads/{{ user.photo_filename }}" alt="{{ user.firstname }} {{ user.name }}" />
+    {% if user.photo_url %}
+    <img class="cv-photo halftone" src="{{ user.photo_url }}" alt="{{ user.firstname }} {{ user.name }}" />
     {% endif %}
   </header>
 
@@ -25,10 +32,10 @@
       </section>
       {% endif %}
 
-      {% if "experience" in active_types and experiences %}
+      {% if user.experiences %}
       <section>
         <h2 class="cv-section">Expériences</h2>
-        {% for exp in experiences %}
+        {% for exp in user.experiences %}
         <article class="cv-item">
           <div>
             <h3 class="cv-item-title">{{ exp.title }}</h3>
@@ -43,10 +50,10 @@
       </section>
       {% endif %}
 
-      {% if "education" in active_types and educations %}
+      {% if user.educations %}
       <section>
         <h2 class="cv-section">Formation</h2>
-        {% for edu in educations %}
+        {% for edu in user.educations %}
         <article class="cv-item">
           <div>
             <h3 class="cv-item-title">{{ edu.degree }}</h3>
@@ -75,27 +82,28 @@
         <div class="cv-side-actions">
           <button type="button" class="btn btn-primary" onclick="window.print()">Télécharger en PDF</button>
           <a href="mailto:{{ user.email }}" class="btn btn-secondary">Me contacter</a>
-          <a href="/portfolio/{{ user.id }}/edit" class="btn btn-ghost">Modifier</a>
           <a href="/users" class="btn btn-ghost">Tous les portfolios</a>
         </div>
       </section>
 
-      {% if "skills" in active_types and skills %}
+      {% if user.skills %}
       <section>
         <h2 class="cv-section cv-section-sm">Compétences</h2>
-        {% set dots = {"Débutant": "●○○", "Intermédiaire": "●●○", "Expert": "●●●"} %}
-        {% for skill in skills %}
+        {% for skill in user.skills %}
         <div class="cv-skill">
           <span class="cv-skill-name">{{ skill.name }}</span>
-          <span class="cv-skill-dots" aria-label="{{ skill.level or 'Intermédiaire' }}">{{ dots.get(skill.level, "●●○") }}</span>
+          <span class="cv-skill-dots" aria-label="{{ skill.level }}">{{
+            {'Débutant': '●○○', 'Intermédiaire': '●●○', 'Expert': '●●●'}.get(skill.level, '●●○')
+          }}</span>
         </div>
         {% endfor %}
       </section>
       {% endif %}
 
+
     </aside>
   </div>
 
-  <p class="cv-foot">Portfolio Maker &middot; @{{ user.username }}</p>
+  <p class="cv-foot">Portfolio généré avec Portfolio Maker &middot; @{{ user.username }}</p>
 </div>
 {% endblock %}

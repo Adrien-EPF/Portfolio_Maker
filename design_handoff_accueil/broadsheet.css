@@ -198,6 +198,12 @@ input[type="checkbox"] { accent-color: var(--color-accent); width: 18px; height:
   margin: 20px 0 0; max-width: 16ch;
 }
 .cv-headline { font-size: 17px; line-height: 29px; margin: 26px 0 0; max-width: 44ch; color: var(--ink-78); }
+.cv-contact-rail { display: flex; flex-direction: column; gap: 14px; align-items: flex-start; }
+.cv-datum { display: flex; flex-direction: column; gap: 4px; font-size: 16px; line-height: 24px; }
+.cv-datum-label {
+  font-size: 11px; line-height: 14px; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--ink-60);
+}
 
 .cv-body {
   display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(240px, 0.72fr);
@@ -240,6 +246,8 @@ input[type="checkbox"] { accent-color: var(--color-accent); width: 18px; height:
   .cv-head { gap: 24px; }
   .cv-name { font-size: 44pt; line-height: 1; margin-top: 8px; }
   .cv-headline { font-size: 11pt; line-height: 1.5; margin-top: 10px; }
+  .cv-contact-rail { gap: 7px; text-align: right; }
+  .cv-datum { font-size: 10.5pt; line-height: 1.35; }
   .cv-body {
     grid-template-columns: minmax(0, 1.62fr) minmax(0, 0.78fr);
     gap: 30px; margin-top: 26px;

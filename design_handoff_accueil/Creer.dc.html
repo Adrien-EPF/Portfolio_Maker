@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/broadsheet-d619df1d-823f-4dea-8c4c-e961498c4799/styles.css">
+<script src="_ds/broadsheet-d619df1d-823f-4dea-8c4c-e961498c4799/_ds_bundle.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root { --font-heading: "Instrument Serif", Georgia, serif; --font-heading-weight: 400; --font-body: "Instrument Sans", system-ui, sans-serif; }
+body { margin: 0; text-wrap: pretty; background: var(--color-bg); font-family: var(--font-body); }
+.nav, .nav-brand, .btn, .tag, .input, label { font-family: var(--font-body); }
+.nav-brand { letter-spacing: -0.01em; }
+a { color: var(--color-accent-700); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+a:hover { color: var(--color-accent-2); }
+input[type="checkbox"] { accent-color: var(--color-accent); width: 18px; height: 18px; }
+select.input, textarea.input { font: inherit; font-size: 15px; }
+</style>
+</helmet>
+
+<div style="min-height: 100vh; display: flex; flex-direction: column; background: var(--color-bg); color: var(--color-text); font-family: var(--font-body);">
+
+  <nav class="nav" style="padding-inline: clamp(20px, 5vw, 80px);">
+    <span class="nav-brand">Portfolio Maker</span>
+    <a href="Accueil.dc.html">Accueil</a>
+    <a href="Creer.dc.html" aria-current="page">Créer</a>
+    <a href="Portfolios.dc.html">Tous les portfolios</a>
+  </nav>
+
+  <main style="flex: 1; width: 100%; max-width: 1280px; margin: 0 auto; box-sizing: border-box; padding: clamp(40px, 6vh, 72px) clamp(20px, 5vw, 80px) 72px; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: clamp(36px, 5vw, 80px); align-items: start;">
+
+    <div style="position: sticky; top: 40px;">
+      <span style="display: block; font-size: 12px; line-height: 14px; letter-spacing: 0.12em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 70%, transparent);">Nouveau portfolio</span>
+      <h1 style="font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: clamp(38px, 4.6vw, 60px); line-height: 1.04; letter-spacing: -0.02em; margin: 24px 0 0; max-width: 18ch;">Remplissez, la page est générée.</h1>
+      <p style="font-size: 16px; line-height: 27px; margin: 28px 0 0; max-width: 34ch; color: color-mix(in srgb, var(--color-text) 78%, transparent);">Seuls l’identité et le contact sont requis. Les sections se cochent maintenant ou s’ajoutent plus tard — et se retirent sans rien effacer.</p>
+      <p style="font-size: 15px; line-height: 27px; margin: 24px 0 0; max-width: 34ch;"><a href="Portfolios.dc.html">Voir les portfolios existants →</a></p>
+    </div>
+
+    <form action="/create" method="post" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: clamp(40px, 5vh, 64px); max-width: 620px;">
+
+      <fieldset style="border: 0; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 20px;">
+        <legend style="display: block; float: none; padding: 0; margin: 0 0 4px; font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: 28px; line-height: 1.2; letter-spacing: -0.015em;">Identité</legend>
+        <div class="field" style="display: flex; flex-direction: column; gap: 8px;">
+          <label for="username" style="font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 70%, transparent);">Nom d’utilisateur <span style="color: var(--color-accent-2);">*</span></label>
+          <input id="username" name="username" type="text" required class="input" style="min-height: 44px; font-size: 15px;" />
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px;">
+          <div class="field" style="display: flex; flex-direction: column; gap: 8px;">
+            <label for="firstname" style="font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 70%, transparent);">Prénom <span style="color: var(--color-accent-2);">*</span></label>
+            <input id="firstname" name="firstname" type="text" required class="input" style="min-height: 44px; font-size: 15px;" />
+          </div>
+          <div class="field" style="display: flex; flex-direction: column; gap: 8px;">
+            <label for="name" style="font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 70%, transparent);">Nom <span style="color: var(--color-accent-2);">*</span></label>
+            <input id="name" name="name" type="text" required class="input" style="min-height: 44px; font-size: 15px;" />
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset style="border: 0; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 20px;">
+        <legend style="display: block; float: none; padding: 0; margin: 0 0 4px; font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: 28px; line-height: 1.2; letter-spacing: -0.015em;">Contact</legend>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px;">
+          <div class="field" style="display: flex; flex-direction: column; gap: 8px;">
+            <label for="email" style="font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 70%, transparent);">Email <span style="color: var(--color-accent-2);">*</span></label>
+            <input id="email" name="email" type="email" required class="input" style="min-height: 44px; font-size: 15px;" />
+          </div>
+          <div class="field" style="display: flex; flex-direction: column; gap: 8px;">
+            <label for="phone" style="font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 70%, transparent);">Téléphone <span style="color: var(--color-accent-2);">*</span></label>
+            <input id="phone" name="phone" type="tel" required class="input" style="min-height: 44px; font-size: 15px;" />
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset style="border: 0; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 20px;">
+        <legend style="display: block; float: none; padding: 0; margin: 0 0 4px; font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: 28px; line-height: 1.2; letter-spacing: -0.015em;">En savoir plus</legend>
+        <p style="font-size: 15px; line-height: 26px; margin: 0; color: color-mix(in srgb, var(--color-text) 70%, transparent);">Optionnel.</p>
+        <div class="field" style="display: flex; flex-direction: column; gap: 8px;">
+          <label for="github" style="font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 70%, transparent);">GitHub</label>
+          <input id="github" name="github" type="text" placeholder="https://github.com/…" class="input" style="min-height: 44px; font-size: 15px;" />
+        </div>
+        <div class="field" style="display: flex; flex-direction: column; gap: 8px;">
+          <label for="bio" style="font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 70%, transparent);">Bio / description</label>
+          <textarea id="bio" name="bio" rows="4" placeholder="Parlez de vous…" class="input" style="resize: vertical; line-height: 26px;"></textarea>
+        </div>
+      </fieldset>
+
+      <fieldset style="border: 0; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 36px;">
+        <div>
+          <legend style="display: block; float: none; padding: 0; margin: 0 0 12px; font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: 28px; line-height: 1.2; letter-spacing: -0.015em;">Sections</legend>
+          <p style="font-size: 15px; line-height: 26px; margin: 0; max-width: 52ch; color: color-mix(in srgb, var(--color-text) 78%, transparent);">Cochez celles que vous voulez remplir dès maintenant. Vous pourrez en ajouter, en retirer ou tout modifier ensuite.</p>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+          <label style="display: flex; align-items: center; gap: 12px; font-family: var(--font-heading); font-size: 22px; letter-spacing: -0.01em; cursor: pointer;"><input type="checkbox" name="activate_skills" />Compétences</label>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px;">
+            <div class="field" style="display: flex; flex-direction: column; gap: 8px;">
+              <label for="skill-name" style="font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 70%, transparent);">Compétence</label>
+              <input id="skill-name" name="skill_name" type="text" class="input" style="min-height: 44px; font-size: 15px;" />
+            </div>
+            <div class="field" style="display: flex; flex-direction: column; gap: 8px;">
+              <label for="skill-level" style="font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 70%, transparent);">Niveau</label>
+              <select id="skill-level" name="skill_level" class="input" style="min-height: 44px;">
+                <option value="">—</option>
+                <option value="Débutant">Débutant</option>
+                <option value="Intermédiaire">Intermédiaire</option>
+                <option value="Expert">Expert</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+          <label style="display: flex; align-items: center; gap: 12px; font-family: var(--font-heading); font-size: 22px; letter-spacing: -0.01em; cursor: pointer;"><input type="checkbox" name="activate_experience" />Expériences</label>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px;">
+            <div class="field" style="display: flex; flex-direction: column; gap: 8px;">
+              <label for="exp-title" style="font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 70%, transparent);">Intitulé de la mission</label>
+              <input id="exp-title" name="exp_title" type="text" class="input" style="min-height: 44px; font-size: 15px;" />
+            </div>
+            <div class="field" style="display: flex; flex-direction: column; gap: 8px;">
+              <label for="exp-company" style="font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 70%, transparent);">Entreprise / établissement</label>
+              <input id="exp-company" name="exp_company" type="text" class="input" style="min-height: 44px; font-size: 15px;" />
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px;">
+            <div class="field" style="display: flex; flex-direction: column; gap: 8px;">
+              <label for="exp-start" style="font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 70%, transparent);">Date de début</label>
+              <input id="exp-start" name="exp_start_date" type="text" class="input" style="min-height: 44px; font-size: 15px;" />
+            </div>
+            <div class="field" style="display: flex; flex-direction: column; gap: 8px;">
+              <label for="exp-end" style="font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 70%, transparent);">Date de fin</label>
+              <input id="exp-end" name="exp_end_date" type="text" placeholder="Vide si poste actuel" class="input" style="min-height: 44px; font-size: 15px;" />
+            </div>
+          </div>
+          <div class="field" style="display: flex; flex-direction: column; gap: 8px;">
+            <label for="exp-description" style="font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 70%, transparent);">Description</label>
+            <textarea id="exp-description" name="exp_description" rows="3" class="input" style="resize: vertical; line-height: 26px;"></textarea>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+          <label style="display: flex; align-items: center; gap: 12px; font-family: var(--font-heading); font-size: 22px; letter-spacing: -0.01em; cursor: pointer;"><input type="checkbox" name="activate_education" />Formation</label>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px;">
+            <div class="field" style="display: flex; flex-direction: column; gap: 8px;">
+              <label for="edu-degree" style="font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 70%, transparent);">Diplôme</label>
+              <input id="edu-degree" name="edu_degree" type="text" class="input" style="min-height: 44px; font-size: 15px;" />
+            </div>
+            <div class="field" style="display: flex; flex-direction: column; gap: 8px;">
+              <label for="edu-school" style="font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 70%, transparent);">Établissement</label>
+              <input id="edu-school" name="edu_school" type="text" class="input" style="min-height: 44px; font-size: 15px;" />
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px;">
+            <div class="field" style="display: flex; flex-direction: column; gap: 8px;">
+              <label for="edu-start" style="font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 70%, transparent);">Date de début</label>
+              <input id="edu-start" name="edu_start_date" type="text" class="input" style="min-height: 44px; font-size: 15px;" />
+            </div>
+            <div class="field" style="display: flex; flex-direction: column; gap: 8px;">
+              <label for="edu-end" style="font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 70%, transparent);">Date de fin</label>
+              <input id="edu-end" name="edu_end_date" type="text" placeholder="Vide si en cours" class="input" style="min-height: 44px; font-size: 15px;" />
+            </div>
+          </div>
+          <div class="field" style="display: flex; flex-direction: column; gap: 8px;">
+            <label for="edu-description" style="font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 70%, transparent);">Description</label>
+            <textarea id="edu-description" name="edu_description" rows="3" class="input" style="resize: vertical; line-height: 26px;"></textarea>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+          <label style="display: flex; align-items: center; gap: 12px; font-family: var(--font-heading); font-size: 22px; letter-spacing: -0.01em; cursor: pointer;"><input type="checkbox" name="activate_photo" />Photo</label>
+          <div class="field" style="display: flex; flex-direction: column; gap: 8px;">
+            <label for="create-photo-file" style="font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 70%, transparent);">Fichier — jpg, png, webp, 5 Mo max</label>
+            <input id="create-photo-file" name="photo" type="file" accept=".jpg,.jpeg,.png,.webp" style="font-size: 15px; padding: 10px 0;" />
+          </div>
+        </div>
+      </fieldset>
+
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 20px;">
+        <button type="submit" class="btn btn-primary" style="min-height: 44px; white-space: nowrap; flex: 0 0 auto;">Générer mon portfolio</button>
+        <a href="Accueil.dc.html" class="btn btn-ghost" style="min-height: 44px; white-space: nowrap; flex: 0 0 auto;">Annuler</a>
+      </div>
+
+    </form>
+  </main>
+
+  <footer style="width: 100%; max-width: 1280px; margin: 0 auto; box-sizing: border-box; padding: 0 clamp(20px, 5vw, 80px) 40px; font-size: 13px; line-height: 24px; color: color-mix(in srgb, var(--color-text) 70%, transparent);">Portfolio Maker — projet FastAPI</footer>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:900}}"></script>
+</body>
+</html>

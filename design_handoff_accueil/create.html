@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% block title %}Créer un portfolio{% endblock %}
+{% set page = 'create' %}
+
+{% block content %}
+<div class="page page-split">
+  <div class="lede lede-sticky">
+    <span class="kicker">Nouveau portfolio</span>
+    <h1 class="lede-title">Remplissez, la page est générée.</h1>
+    <p class="lede-sub">Seuls l'identité et le contact sont requis. Les sections se cochent maintenant ou s'ajoutent plus tard — et se retirent sans rien effacer.</p>
+    <p class="lede-link"><a href="/users">Voir les portfolios existants &rarr;</a></p>
+  </div>
+
+  <form class="form" action="/create" method="post" enctype="multipart/form-data">
+
+    <fieldset>
+      <legend>Identité</legend>
+      <div class="field">
+        <label for="username">Nom d'utilisateur <span class="required">*</span></label>
+        <input id="username" class="input" type="text" name="username" required />
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label for="firstname">Prénom <span class="required">*</span></label>
+          <input id="firstname" class="input" type="text" name="firstname" required />
+        </div>
+        <div class="field">
+          <label for="name">Nom <span class="required">*</span></label>
+          <input id="name" class="input" type="text" name="name" required />
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Contact</legend>
+      <div class="field-row">
+        <div class="field">
+          <label for="email">Email <span class="required">*</span></label>
+          <input id="email" class="input" type="email" name="email" required />
+        </div>
+        <div class="field">
+          <label for="phone">Téléphone <span class="required">*</span></label>
+          <input id="phone" class="input" type="tel" name="phone" required />
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>En savoir plus</legend>
+      <p class="hint">Optionnel.</p>
+      <div class="field">
+        <label for="github">GitHub</label>
+        <input id="github" class="input" type="text" name="github" placeholder="https://github.com/…" />
+      </div>
+      <div class="field">
+        <label for="bio">Bio / description</label>
+        <textarea id="bio" class="input" name="bio" rows="4" placeholder="Parlez de vous…"></textarea>
+      </div>
+    </fieldset>
+
+    <fieldset class="fieldset-sections">
+      <legend>Sections</legend>
+      <p class="hint hint-wide">Cochez celles que vous voulez remplir dès maintenant. Vous pourrez en ajouter, en retirer ou tout modifier ensuite.</p>
+
+      <div class="section-toggle">
+        <label class="toggle"><input type="checkbox" name="activate_skills" />Compétences</label>
+        <div class="field-row">
+          <div class="field">
+            <label for="skill-name">Compétence</label>
+            <input id="skill-name" class="input" type="text" name="skill_name" />
+          </div>
+          <div class="field">
+            <label for="skill-level">Niveau</label>
+            <select id="skill-level" class="input" name="skill_level">
+              <option value="">—</option>
+              <option value="Débutant">Débutant</option>
+              <option value="Intermédiaire">Intermédiaire</option>
+              <option value="Expert">Expert</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-toggle">
+        <label class="toggle"><input type="checkbox" name="activate_experience" />Expériences</label>
+        <div class="field-row">
+          <div class="field">
+            <label for="exp-title">Intitulé de la mission</label>
+            <input id="exp-title" class="input" type="text" name="exp_title" />
+          </div>
+          <div class="field">
+            <label for="exp-company">Entreprise / établissement</label>
+            <input id="exp-company" class="input" type="text" name="exp_company" />
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="exp-start">Date de début</label>
+            <input id="exp-start" class="input" type="text" name="exp_start_date" />
+          </div>
+          <div class="field">
+            <label for="exp-end">Date de fin</label>
+            <input id="exp-end" class="input" type="text" name="exp_end_date" placeholder="Vide si poste actuel" />
+          </div>
+        </div>
+        <div class="field">
+          <label for="exp-description">Description</label>
+          <textarea id="exp-description" class="input" name="exp_description" rows="3"></textarea>
+        </div>
+      </div>
+
+      <div class="section-toggle">
+        <label class="toggle"><input type="checkbox" name="activate_education" />Formation</label>
+        <div class="field-row">
+          <div class="field">
+            <label for="edu-degree">Diplôme</label>
+            <input id="edu-degree" class="input" type="text" name="edu_degree" />
+          </div>
+          <div class="field">
+            <label for="edu-school">Établissement</label>
+            <input id="edu-school" class="input" type="text" name="edu_school" />
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="edu-start">Date de début</label>
+            <input id="edu-start" class="input" type="text" name="edu_start_date" />
+          </div>
+          <div class="field">
+            <label for="edu-end">Date de fin</label>
+            <input id="edu-end" class="input" type="text" name="edu_end_date" placeholder="Vide si en cours" />
+          </div>
+        </div>
+        <div class="field">
+          <label for="edu-description">Description</label>
+          <textarea id="edu-description" class="input" name="edu_description" rows="3"></textarea>
+        </div>
+      </div>
+
+      <div class="section-toggle">
+        <label class="toggle"><input type="checkbox" name="activate_photo" />Photo</label>
+        <div class="field">
+          <label for="create-photo-file">Fichier — jpg, png, webp, 5 Mo max</label>
+          <input id="create-photo-file" class="input-file" type="file" name="photo" accept=".jpg,.jpeg,.png,.webp" />
+        </div>
+      </div>
+    </fieldset>
+
+    <div class="actions-row">
+      <button type="submit" class="btn btn-primary">Générer mon portfolio</button>
+      <a href="/" class="btn btn-ghost">Annuler</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -1,3 +1,5 @@
+{# base.html — option B : la nav et le pied de page du design.
+   Remplace templates/base.html. #}
 <!doctype html>
 <html lang="fr">
 
@@ -7,9 +9,7 @@
     <title>{% block title %}{% endblock %} - Portfolio Maker</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-        href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap"
-        rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/static/style.css" />
     <link rel="stylesheet" href="/static/broadsheet.css" />
 </head>
@@ -17,16 +17,14 @@
 <body>
     <nav class="site-nav">
         <span class="brand">Portfolio Maker</span>
-        <a href="/"{% if page=="home" %} aria-current="page"{% endif %}>Accueil</a>
-        <a href="/create"{% if page=="create" %} aria-current="page"{% endif %}>Créer</a>
-        <a href="/users"{% if page=="users" %} aria-current="page"{% endif %}>Tous les portfolios</a>
+        <a href="/" {% if page=='home' %}aria-current="page" {% endif %}>Accueil</a>
+        <a href="/create" {% if page=='create' %}aria-current="page" {% endif %}>Créer</a>
+        <a href="/users" {% if page=='users' %}aria-current="page" {% endif %}>Tous les portfolios</a>
     </nav>
     <main>
         {% block content %}{% endblock %}
     </main>
-    <footer class="site-footer">
-        <p>Portfolio Maker — Projet FastAPI</p>
-    </footer>
+    <footer class="site-footer">Portfolio Maker — projet FastAPI</footer>
 </body>
 
 </html>

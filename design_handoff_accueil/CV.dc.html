@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="_ds/broadsheet-d619df1d-823f-4dea-8c4c-e961498c4799/styles.css" />
+<script src="_ds/broadsheet-d619df1d-823f-4dea-8c4c-e961498c4799/_ds_bundle.js"></script>
+<script src="./image-slot.js"></script>
+<script src="./doc-page.js"></script>
+<style>
+  body { margin: 0; color: #201e1d; font-family: "Instrument Sans", system-ui, sans-serif; text-wrap: pretty; }
+  doc-page:not(:defined) { visibility: hidden; }
+  a { color: #006786; text-decoration: none; }
+  a:hover { color: #d6006c; text-decoration: underline; text-underline-offset: 3px; }
+  :focus-visible { outline: 2px solid #0088b0; outline-offset: 2px; }
+  ::selection { background: rgba(0,136,176,0.3); }
+</style>
+</helmet>
+
+<doc-page size="a4">
+  <section class="page" style="box-sizing:border-box;padding:52px 52px 44px;background:#f3f2f2;display:flex;flex-direction:column">
+
+    <header style="display:flex;align-items:flex-end;justify-content:space-between;gap:36px">
+      <div style="min-width:0">
+        <span style="display:block;font-size:11px;line-height:13px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(32,30,29,0.65)">Portfolio &middot; @{{ username }}</span>
+        <h1 style="font-family:'Instrument Serif',Georgia,serif;font-weight:400;font-size:58px;line-height:1;letter-spacing:-0.025em;margin:14px 0 0">{{ firstname }} {{ name }}</h1>
+        <sc-if value="{{ headline }}" hint-placeholder-val="{{ true }}">
+          <p style="font-size:16px;line-height:25px;margin:16px 0 0;max-width:42ch;color:rgba(32,30,29,0.8)">{{ headline }}</p>
+        </sc-if>
+      </div>
+      <sc-if value="{{ showPhoto }}" hint-placeholder-val="{{ true }}">
+        <div class="halftone" style="width:176px;height:176px;flex:0 0 auto">
+          <image-slot id="cv-portrait" shape="rect" placeholder="Photo"></image-slot>
+        </div>
+      </sc-if>
+    </header>
+
+    <div style="display:grid;grid-template-columns:minmax(0,1.62fr) minmax(0,0.78fr);gap:44px;align-items:start;margin-top:46px;flex:1">
+
+      <main style="display:flex;flex-direction:column;gap:34px;min-width:0">
+
+        <section>
+          <h2 style="font-family:'Instrument Serif',Georgia,serif;font-weight:400;font-size:28px;line-height:1.15;letter-spacing:-0.015em;margin:0">Profil</h2>
+          <p style="font-size:15.5px;line-height:26px;margin:14px 0 0;color:rgba(32,30,29,0.88)">{{ bio }}</p>
+        </section>
+
+        <section>
+          <h2 style="font-family:'Instrument Serif',Georgia,serif;font-weight:400;font-size:28px;line-height:1.15;letter-spacing:-0.015em;margin:0">Expériences</h2>
+          <sc-for list="{{ experiences }}" as="exp" hint-placeholder-count="3">
+            <article style="padding:22px 0 0;break-inside:avoid">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px">
+                <h3 style="font-family:'Instrument Serif',Georgia,serif;font-weight:400;font-size:21px;line-height:1.25;letter-spacing:-0.01em;margin:0">{{ exp.title }}</h3>
+                <span style="font-size:11px;line-height:16px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(32,30,29,0.6);white-space:nowrap">{{ exp.period }}</span>
+              </div>
+              <p style="font-size:14.5px;line-height:21px;margin:5px 0 0;color:rgba(32,30,29,0.7)">{{ exp.company }}</p>
+              <p style="font-size:15px;line-height:25px;margin:9px 0 0;color:rgba(32,30,29,0.88)">{{ exp.description }}</p>
+            </article>
+          </sc-for>
+        </section>
+
+      </main>
+
+      <aside style="display:flex;flex-direction:column;gap:30px;min-width:0">
+
+        <section>
+          <h2 style="font-family:'Instrument Serif',Georgia,serif;font-weight:400;font-size:24px;line-height:1.15;letter-spacing:-0.015em;margin:0">Contact</h2>
+          <div style="display:flex;flex-direction:column;gap:7px;margin-top:14px">
+            <a href="{{ mailto }}" style="font-size:14.5px;line-height:21px">{{ email }}</a>
+            <span style="font-size:14.5px;line-height:21px">{{ phone }}</span>
+            <sc-if value="{{ github }}" hint-placeholder-val="{{ true }}">
+              <a href="{{ github }}" style="font-size:14.5px;line-height:21px">{{ githubLabel }}</a>
+            </sc-if>
+          </div>
+        </section>
+
+        <section>
+          <h2 style="font-family:'Instrument Serif',Georgia,serif;font-weight:400;font-size:24px;line-height:1.15;letter-spacing:-0.015em;margin:0">Compétences</h2>
+          <sc-for list="{{ skills }}" as="skill" hint-placeholder-count="5">
+            <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:12px 0 0">
+              <span style="font-size:14.5px;line-height:20px">{{ skill.name }}</span>
+              <sc-if value="{{ skillsAsDots }}" hint-placeholder-val="{{ true }}">
+                <span style="font-size:11px;line-height:20px;letter-spacing:0.16em;color:#006786;white-space:nowrap">{{ skill.dots }}</span>
+              </sc-if>
+              <sc-if value="{{ skillsAsText }}" hint-placeholder-val="{{ false }}">
+                <span style="font-size:10.5px;line-height:20px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(32,30,29,0.6);white-space:nowrap">{{ skill.level }}</span>
+              </sc-if>
+            </div>
+          </sc-for>
+        </section>
+
+        <section>
+          <h2 style="font-family:'Instrument Serif',Georgia,serif;font-weight:400;font-size:24px;line-height:1.15;letter-spacing:-0.015em;margin:0">Formation</h2>
+          <sc-for list="{{ education }}" as="edu" hint-placeholder-count="2">
+            <div style="padding:14px 0 0">
+              <p style="font-family:'Instrument Serif',Georgia,serif;font-size:17px;line-height:22px;letter-spacing:-0.01em;margin:0">{{ edu.degree }}</p>
+              <p style="font-size:14px;line-height:20px;margin:4px 0 0;color:rgba(32,30,29,0.7)">{{ edu.school }}</p>
+              <p style="font-size:11px;line-height:16px;letter-spacing:0.1em;text-transform:uppercase;margin:4px 0 0;color:rgba(32,30,29,0.6)">{{ edu.period }}</p>
+            </div>
+          </sc-for>
+        </section>
+
+      </aside>
+    </div>
+
+    <p style="font-size:11px;line-height:16px;letter-spacing:0.1em;text-transform:uppercase;margin:32px 0 0;color:rgba(32,30,29,0.55)">Portfolio Maker &middot; @{{ username }}</p>
+  </section>
+</doc-page>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;showPhoto&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Affichage&quot;},&quot;skillDisplay&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Points&quot;,&quot;Texte&quot;],&quot;default&quot;:&quot;Points&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Affichage&quot;},&quot;firstname&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Camille&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Identité&quot;},&quot;name&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Ferrand&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Identité&quot;},&quot;username&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;cferrand&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Identité&quot;},&quot;headline&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Développeuse web — back-end Python, interfaces sobres, projets menés de la maquette au déploiement.&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Identité&quot;},&quot;email&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;camille.ferrand@mail.com&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Contact&quot;},&quot;phone&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;06 42 18 07 55&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Contact&quot;},&quot;github&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;https://github.com/cferrand&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Contact&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const p = this.props;
+    const username = p.username || "cferrand";
+    const firstname = p.firstname || "Camille";
+    const name = p.name || "Ferrand";
+    const email = p.email || "camille.ferrand@mail.com";
+    const phone = p.phone || "06 42 18 07 55";
+    const github = p.github || "https://github.com/cferrand";
+    const style = p.skillDisplay || "Points";
+    const dotsFor = (lvl) => ({ "Débutant": "●○○", "Intermédiaire": "●●○", "Expert": "●●●" }[lvl] || "●●○");
+
+    return {
+      username, firstname, name, email, phone, github,
+      githubLabel: github.replace(/^https?:\/\//, "").replace(/\/$/, ""),
+      mailto: "mailto:" + email,
+      headline: p.headline || "Développeuse web — back-end Python, interfaces sobres, projets menés de la maquette au déploiement.",
+      bio: p.bio || "Trois ans à construire des applications web côté serveur, surtout en Python et FastAPI. J'aime les interfaces qui se lisent d'un coup d'œil et les bases bien nommées. En recherche d'une alternance longue à Lyon ou en télétravail.",
+      showPhoto: (p.showPhoto ?? true) !== false,
+      skillsAsDots: style === "Points",
+      skillsAsText: style === "Texte",
+      skills: [
+        { name: "Python / FastAPI", level: "Expert" },
+        { name: "SQL & SQLModel", level: "Intermédiaire" },
+        { name: "HTML / CSS", level: "Expert" },
+        { name: "JavaScript", level: "Intermédiaire" },
+        { name: "Git & CI", level: "Intermédiaire" }
+      ].map(s => ({ ...s, dots: dotsFor(s.level) })),
+      experiences: [
+        { title: "Développeuse back-end", company: "Studio Marelle, Lyon — alternance", period: "Sept. 2024 — Présent", description: "API interne de gestion de contenus : modèles SQLModel, authentification, tests. Temps de publication d'une fiche réduit de 40 %." },
+        { title: "Développeuse web", company: "Coopérative Bellevue — stage", period: "Févr. — Juil. 2024", description: "Refonte du site vitrine et de son back-office : gabarits Jinja, système de composants, charte typographique." },
+        { title: "Freelance", company: "Missions ponctuelles", period: "2023 — 2024", description: "Sites et outils pour trois associations : formulaires, exports PDF, hébergement." }
+      ],
+      education: [
+        { degree: "Licence pro. Développement web", school: "Université Lyon 1", period: "2023 — 2024" },
+        { degree: "BTS SIO — option SLAM", school: "Lycée La Martinière", period: "2021 — 2023" }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>
