@@ -51,12 +51,22 @@ def test_nav_chrome_is_consistent_across_pages(client):
         assert response.status_code == 200
         text = response.text
         assert '<nav class="site-nav">' in text
-        assert '<span class="brand">Portfolio Maker</span>' in text
+        assert 'aria-label="Portfolio Maker, accueil"' in text
+        assert 'class="logo-mark"' in text
         assert 'href="/"' in text
         assert 'href="/create"' in text
         assert 'href="/users"' in text
         assert '<footer class="site-footer">' in text
         assert "Portfolio Maker — Projet FastAPI" in text
+
+
+def test_favicon_and_logo_assets_are_served(client):
+    response = client.get("/")
+    assert response.status_code == 200
+    assert '<link rel="icon" type="image/svg+xml" href="/static/favicon.svg" />' in response.text
+
+    assert client.get("/static/logo-pm.svg").status_code == 200
+    assert client.get("/static/favicon.svg").status_code == 200
 
 
 def test_nav_marks_current_page_with_aria_current(client):

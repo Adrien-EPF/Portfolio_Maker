@@ -12,11 +12,15 @@
         rel="stylesheet" />
     <link rel="stylesheet" href="/static/style.css" />
     <link rel="stylesheet" href="/static/broadsheet.css" />
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg" />
 </head>
 
 <body>
     <nav class="site-nav">
-        <span class="brand">Portfolio Maker</span>
+        <a class="logo brand" href="/" aria-label="Portfolio Maker, accueil">
+            <span class="logo-mark" aria-hidden="true"><span>PM</span></span>
+            <span class="logo-word">Portfolio Maker</span>
+        </a>
         <a href="/"{% if page=="home" %} aria-current="page"{% endif %}>Accueil</a>
         <a href="/create"{% if page=="create" %} aria-current="page"{% endif %}>Créer</a>
         <a href="/users"{% if page=="users" %} aria-current="page"{% endif %}>Tous les portfolios</a>
