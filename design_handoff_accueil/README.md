@@ -272,3 +272,70 @@ Une seule page, deux colonnes, aucune carte ni bordure (règle n°1 du système)
 - `portfolio.html` — le gabarit Jinja du CV.
 - `broadsheet.css` — la feuille unique (pages 1-3 + CV + impression).
 - `CV.dc.html` — le prototype A4 de référence (ouvrable dans un navigateur).
+
+---
+
+# Handoff n°3 : le logo
+
+Marque retenue : **« repérage manqué »** — le monogramme PM imprimé comme trois plaques
+mal calées (cyan #0088b0, magenta #d6006c, encre #201e1d), en Instrument Serif, la police
+déjà chargée par `base.html`. Maquette de référence : `Logos.dc.html`.
+
+## Ce qu'il faut faire
+1. Copier `static/logo-pm.svg` et `static/favicon.svg` dans le dossier `static/` du projet.
+2. Reprendre `broadsheet.css` (le bloc `.logo*` est en fin de fichier) et `base.html`
+   du dossier : la nav y remplace `<span class="brand">` par le lockup, et le `<head>`
+   gagne `<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">`.
+3. Rien d'autre : pas de route, pas de dépendance, pas d'image bitmap.
+
+## Le mark en HTML
+Un seul élément, aucune image — le décalage vient de deux pseudo-éléments, donc le
+mark suit la taille de police et reste net à tous les zooms :
+
+```html
+<a class="logo" href="/" aria-label="Portfolio Maker, accueil">
+  <span class="logo-mark" aria-hidden="true"><span>PM</span></span>
+  <span class="logo-word">Portfolio Maker</span>
+</a>
+```
+
+- Taille : `style="--logo-size: 30px"` sur `.logo-mark` (30 px dans la nav, 150 px en grand).
+- `.logo-mark aria-hidden` + `aria-label` sur le lien : le lecteur d'écran annonce le nom
+  une seule fois, pas « PM PM PM ».
+- Mark seul (sans le nom) : garder `.logo-mark`, supprimer `.logo-word`.
+
+## Déclinaisons prévues par le CSS
+| Usage | Classe | Note |
+| --- | --- | --- |
+| Nav, en-têtes | `.logo` + `.logo-mark` | 30 px, décalage 4 % du corps |
+| Sous 16 px, tampon, fax | `.logo-mark .logo-mono` | plaques supprimées, encre pleine |
+| Fond encre `#201e1d` | `.logo-on-ink` sur le parent | passe les plaques en `screen` |
+| Impression | automatique (`@media print`) | monochrome, pas de trichromie sur papier |
+
+## Règles à respecter
+- Décalage des plaques = **4 % de la taille de police**, jamais plus (il est en `em`,
+  donc ne le convertissez pas en px).
+- **Sous 16 px : monochrome.** Le décalage brouille le tracé.
+- Marge de protection : la hauteur du M.
+- Fonds admis : papier `#f3f2f2`, blanc, encre `#201e1d`. **Jamais sur une photo.**
+- `isolation: isolate` sur `.logo-mark` est nécessaire : sans lui le `multiply`
+  déborde sur ce qu'il y a derrière la nav.
+
+## Un point à surveiller
+Les deux SVG déclarent `font-family: Instrument Serif, Georgia, serif`. Dans une page
+web la police est chargée, donc le rendu est exact ; **dans l'onglet du navigateur le
+favicon est rendu hors page** et retombe sur Georgia — proche, mais pas identique.
+Si ça vous gêne, deux options : convertir les lettres en tracés (Inkscape → « Objet en
+chemin »), ou générer un `favicon.png` 32×32 depuis `Logos.dc.html`. Le SVG suffit dans
+tous les autres cas (README, exports, impression).
+
+## Prompt de départ pour Claude Code
+> Lis `design_handoff_accueil/README.md` (section « Handoff n°3 : le logo »), puis :
+> copie `static/logo-pm.svg` et `static/favicon.svg` dans `static/`, mets à jour
+> `static/broadsheet.css` avec la version du dossier (elle ajoute le bloc `.logo*` en
+> fin de fichier) et remplace `templates/base.html` par celui du dossier — la nav y
+> utilise le lockup PM et le `<head>` déclare le favicon SVG. Ne touche ni aux routes,
+> ni aux `name`/`id` des formulaires, ni au reste de `static/style.css` ; si
+> `style.css` définit déjà `.brand`, laisse-le, `.logo` prend le dessus dans la nav.
+> Vérifie ensuite que le mark reste net à 30 px dans la nav et que l'impression d'un
+> portfolio sort le logo en monochrome.

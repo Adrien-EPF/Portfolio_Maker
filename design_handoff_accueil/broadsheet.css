@@ -269,3 +269,40 @@ input[type="checkbox"] { accent-color: var(--color-accent); width: 18px; height:
   .cv-item, .cv-skill, .cv-photo, section { break-inside: avoid; }
   a { color: var(--color-text); text-decoration: none; }
 }
+
+
+/* — Logo « repérage manqué » : le monogramme PM en trois plaques décalées — */
+.logo {
+  display: inline-flex; align-items: center; gap: 14px;
+  color: inherit; text-decoration: none;
+}
+.logo:hover { color: inherit; text-decoration: none; }
+.logo-mark {
+  position: relative; display: inline-block; flex: 0 0 auto;
+  font-family: var(--font-heading, 'Instrument Serif', Georgia, serif);
+  font-size: var(--logo-size, 30px); line-height: 1; letter-spacing: -0.04em;
+  isolation: isolate; /* le multiply reste dans le mark */
+}
+/* décalage des plaques = 4 % du corps, jamais plus */
+.logo-mark > span { color: var(--color-accent, #0088b0); mix-blend-mode: multiply; display: block; }
+.logo-mark::before, .logo-mark::after {
+  content: 'PM'; position: absolute; mix-blend-mode: multiply;
+}
+.logo-mark::before { left: 0.05em; top: 0.035em; color: var(--color-accent-2, #d6006c); }
+.logo-mark::after  { left: 0.015em; top: -0.03em; color: var(--color-text, #201e1d); }
+.logo-word {
+  font-family: var(--font-heading, 'Instrument Serif', Georgia, serif);
+  font-size: 20px; letter-spacing: -0.01em; white-space: nowrap;
+}
+/* en dessous de 16 px, le décalage brouille : monochrome */
+.logo-mark.logo-mono > span { color: var(--color-text, #201e1d); }
+.logo-mark.logo-mono::before, .logo-mark.logo-mono::after { content: none; }
+/* sur encre */
+.logo-on-ink .logo-mark { mix-blend-mode: normal; }
+.logo-on-ink .logo-mark > span,
+.logo-on-ink .logo-mark::before,
+.logo-on-ink .logo-mark::after { mix-blend-mode: screen; }
+.logo-on-ink .logo-mark::after { color: var(--color-bg, #f3f2f2); }
+.logo-on-ink .logo-word { color: var(--color-bg, #f3f2f2); }
+
+@media print { .logo-mark > span { color: var(--color-text, #201e1d); } .logo-mark::before, .logo-mark::after { content: none; } }
