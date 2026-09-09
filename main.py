@@ -1,13 +1,18 @@
 import itertools
+import mimetypes
 import os
+import re
+import unicodedata
 from dataclasses import dataclass
 from typing import Annotated
 from fastapi import FastAPI, Request, Form, HTTPException, File, UploadFile
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import text
 from sqlmodel import Field, Session, SQLModel, create_engine, select
+from weasyprint import HTML
+from weasyprint.urls import URLFetcherResponse
 
 DATABASE_URL = "sqlite:///./portfolio.db"
 connect_args = {"check_same_thread": False}
@@ -446,29 +451,73 @@ async def create_user(
 
 # Portfolio (vue publique, lecture seule — le CV)
 
+def _load_portfolio_context(session: Session, user_id: int) -> dict:
+    user = session.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Utilisateur introuvable")
+    active_sections = get_active_sections(session, user_id)
+    active_types = {s.section_type for s in active_sections}
+    skills = session.exec(
+        select(Skill).where(Skill.user_id == user_id).order_by(Skill.position)
+    ).all() if "skills" in active_types else []
+    experiences = session.exec(
+        select(Experience).where(Experience.user_id == user_id).order_by(Experience.position)
+    ).all() if "experience" in active_types else []
+    educations = session.exec(
+        select(Education).where(Education.user_id == user_id).order_by(Education.position)
+    ).all() if "education" in active_types else []
+    return {
+        "user": user, "skills": skills, "experiences": experiences, "educations": educations,
+        "active_types": active_types,
+    }
+
+
 @app.get("/portfolio/{user_id}")
 def show_portfolio(request: Request, user_id: int):
     with Session(engine) as session:
-        user = session.get(User, user_id)
-        if not user:
-            raise HTTPException(status_code=404, detail="Utilisateur introuvable")
-        active_sections = get_active_sections(session, user_id)
-        active_types = {s.section_type for s in active_sections}
-        skills = session.exec(
-            select(Skill).where(Skill.user_id == user_id).order_by(Skill.position)
-        ).all() if "skills" in active_types else []
-        experiences = session.exec(
-            select(Experience).where(Experience.user_id == user_id).order_by(Experience.position)
-        ).all() if "experience" in active_types else []
-        educations = session.exec(
-            select(Education).where(Education.user_id == user_id).order_by(Education.position)
-        ).all() if "education" in active_types else []
-        return templates.TemplateResponse(
-            request, "portfolio.html",
-            context={
-                "user": user, "skills": skills, "experiences": experiences, "educations": educations,
-                "active_types": active_types,
-            },
+        context = _load_portfolio_context(session, user_id)
+        return templates.TemplateResponse(request, "portfolio.html", context=context)
+
+
+def _slugify(value: str) -> str:
+    normalized = unicodedata.normalize("NFKD", value).encode("ascii", "ignore").decode("ascii")
+    return re.sub(r"[^a-zA-Z0-9]+", "-", normalized).strip("-").lower()
+
+
+def _pdf_url_fetcher(url: str) -> URLFetcherResponse:
+    # Serve /static/* assets straight from disk, and skip the Google Fonts
+    # stylesheet, so PDF export never depends on a real network/HTTP round
+    # trip (the CSS's system-font fallbacks are used instead) — this keeps
+    # generation fast and deterministic, whether serving a real request or
+    # running under a test client with no bound socket.
+    if "/static/" in url:
+        local_path = os.path.join("static", url.split("/static/", 1)[1])
+        if os.path.isfile(local_path):
+            with open(local_path, "rb") as f:
+                data = f.read()
+            mime_type = mimetypes.guess_type(local_path)[0] or "application/octet-stream"
+            return URLFetcherResponse(url, data, {"Content-Type": mime_type})
+    # Anything else (missing static asset, Google Fonts) resolves to an empty
+    # body rather than raising: a plain-function url_fetcher that raises trips
+    # a WeasyPrint internal assumption that url_fetcher is a class instance,
+    # and a missing/skipped asset should degrade gracefully, not abort the PDF.
+    return URLFetcherResponse(url, b"", {"Content-Type": "text/css"})
+
+
+@app.get("/portfolio/{user_id}/pdf")
+def download_portfolio_pdf(request: Request, user_id: int):
+    with Session(engine) as session:
+        context = _load_portfolio_context(session, user_id)
+        user = context["user"]
+        html = templates.get_template("portfolio.html").render(**context)
+        pdf_bytes = HTML(
+            string=html, base_url=str(request.base_url), url_fetcher=_pdf_url_fetcher
+        ).write_pdf()
+        filename = _slugify(f"{user.firstname} {user.name}") or user.username
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f'attachment; filename="{filename}.pdf"'},
         )
 
 

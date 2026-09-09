@@ -264,6 +264,58 @@ def test_public_portfolio_skill_level_renders_as_dots_with_aria_label(client):
     assert "●●●" in page.text
 
 
+def test_pdf_download_returns_pdf_file(client):
+    user_id = create_user(client)
+    response = client.get(f"/portfolio/{user_id}/pdf")
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "application/pdf"
+    assert "attachment" in response.headers["content-disposition"]
+    assert response.content.startswith(b"%PDF")
+
+
+def test_pdf_download_filename_reflects_user_name(client):
+    user_id = create_user(client, firstname="Jean", name="Dupont")
+    response = client.get(f"/portfolio/{user_id}/pdf")
+    assert 'filename="jean-dupont.pdf"' in response.headers["content-disposition"]
+
+
+def test_pdf_download_works_with_all_sections_active(client):
+    user_id = create_user(client)
+    client.post(
+        f"/portfolio/{user_id}/skills/add", data={"name": "Python", "level": "Expert"}, follow_redirects=False
+    )
+    client.post(
+        f"/portfolio/{user_id}/experiences/add",
+        data={"title": "Développeuse", "company": "Acme", "start_date": "2020"},
+        follow_redirects=False,
+    )
+    client.post(
+        f"/portfolio/{user_id}/educations/add",
+        data={"degree": "Master Informatique", "school": "Université de Montpellier", "start_date": "2023"},
+        follow_redirects=False,
+    )
+    client.post(
+        f"/portfolio/{user_id}/photo/upload",
+        files={"photo": ("avatar.png", b"\x89PNG\r\n\x1a\n" + b"0" * 20, "image/png")},
+        follow_redirects=False,
+    )
+    response = client.get(f"/portfolio/{user_id}/pdf")
+    assert response.status_code == 200
+    assert response.content.startswith(b"%PDF")
+
+
+def test_pdf_download_not_found_returns_404(client):
+    response = client.get("/portfolio/999/pdf")
+    assert response.status_code == 404
+
+
+def test_public_portfolio_pdf_link_points_to_download_route_not_print(client):
+    user_id = create_user(client)
+    page = client.get(f"/portfolio/{user_id}")
+    assert f'href="/portfolio/{user_id}/pdf"' in page.text
+    assert "window.print()" not in page.text
+
+
 def test_public_portfolio_has_modifier_link_to_edit_page(client):
     user_id = create_user(client)
     page = client.get(f"/portfolio/{user_id}")

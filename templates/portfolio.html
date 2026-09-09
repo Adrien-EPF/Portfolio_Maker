@@ -73,7 +73,7 @@
           {% if user.github %}<a href="{{ user.github }}">{{ user.github|replace('https://', '')|replace('http://', '') }}</a>{% endif %}
         </div>
         <div class="cv-side-actions">
-          <button type="button" class="btn btn-primary" onclick="window.print()">Télécharger en PDF</button>
+          <a href="/portfolio/{{ user.id }}/pdf" class="btn btn-primary">Télécharger en PDF</a>
           <a href="mailto:{{ user.email }}" class="btn btn-secondary">Me contacter</a>
           <a href="/portfolio/{{ user.id }}/edit" class="btn btn-ghost">Modifier</a>
           <a href="/users" class="btn btn-ghost">Tous les portfolios</a>
