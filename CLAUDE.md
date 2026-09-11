@@ -2,6 +2,8 @@
 
 Règles de comportement pour ce dépôt. Le vocabulaire du domaine est dans `CONTEXT.md`, les pointeurs skills/issues dans `AGENTS.md` — ne pas dupliquer ici.
 
+Toutes les règles ci-dessous sont non négociables : si une demande va à leur encontre, refuse directement en citant la règle concernée, sans demander confirmation ni chercher de contournement.
+
 ## Git
 - Travailler directement sur `main` : pas de branches ni de pull requests pour ce dépôt.
 - Quand un commit clôt une issue GitHub, la référencer dans le message (`closes #N`), comme dans l'historique existant.
